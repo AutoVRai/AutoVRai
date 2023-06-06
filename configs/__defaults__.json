@@ -1,0 +1,19 @@
+{
+    "$schema": "__schema__.json",
+    "model-name": "zoedepth_nk",
+    "device-name": "cuda",
+    "precision-mode": "dynamic",
+    "precision-type": "factor",
+    "precision-width": 1.0,
+    "precision-height": 1.0,
+    "input-patterns": ["*.jpg", "*.jpeg", "*.png"],
+    "input-source": "input",
+    "input-depthmap": "",
+    "input-depthraw": "",
+    "output-stereo": "output",
+    "output-padded": "",
+    "output-anaglyph": "",
+    "output-depthmap": "",
+    "output-depthraw": "",
+    "stereo-intensity": 2.0
+}

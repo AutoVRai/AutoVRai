@@ -1,0 +1,159 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "title": "AutoVR.ai Configuration",
+    "description": "Configuration schema for AutoVR.ai, an open-source project that automates the conversion and enhancement of regular images and videos into 'Flat 3D' for VR.",
+    "type": "object",
+    "properties": {
+        "$schema": {
+            "description": "The path to this schema file.",
+            "type": "string"
+        },
+        "model-name": {
+            "description": "Select the model: 'zoedepth_nk', 'zoedepth_n', or 'zoedepth_k'. The default model 'zoedepth_nk' is suitable for most use cases. 'zoedepth_n' sometimes works well for indoor close-up shots. 'zoedepth_k' may be better for outdoor, but you can test for yourself. Share your opinions and experiences with these models!",
+            "type": "string",
+            "enum": [
+                "zoedepth_nk",
+                "zoedepth_n",
+                "zoedepth_k"
+            ]
+        },
+        "device-name": {
+            "description": "Select the device: 'cpu' or 'cuda'. Use 'cuda' for GPU processing, which significantly improves speed. For multiple GPUs, use 'cuda:0', 'cuda:1', etc. Basic parallel processing is supported by splitting files across GPUs (testers needed!).",
+            "type": "string",
+            "enum": [
+                "cpu",
+                "cuda"
+            ]
+        },
+        "precision-mode": {
+            "description": "Select the precision mode: 'dynamic' or 'manual'. Dynamic mode automatically scales down precision if memory limitations are encountered. Manual mode throws an error if the defined precision fails. It is recommended to use dynamic mode unless there is a specific reason not to.",
+            "type": "string",
+            "enum": [
+                "dynamic",
+                "manual"
+            ]
+        },
+        "precision-type": {
+            "description": "Select the precision type: 'factor' or 'pixels'. This determines if the precision-width and precision-height are factors (multiples/percentages) or absolute pixel values.",
+            "type": "string",
+            "enum": [
+                "factor",
+                "pixels"
+            ]
+        },
+        "precision-width": {
+            "description": "Depending on precision-type, set a number from 0.1 to 10.0 (steps of 0.1) or an integer from 128 to 2048 (steps of 128). A factor of 1.0 maintains the same size as the input's resolution, 0.5 halves it, and 2.0 doubles it. This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "type": [
+                "number",
+                "integer"
+            ]
+        },
+        "precision-height": {
+            "description": "Depending on precision-type, set a number from 0.1 to 10.0 (steps of 0.1) or an integer from 128 to 2048 (steps of 128). A factor of 1.0 maintains the same size as the input's resolution, 0.5 halves it, and 2.0 doubles it. This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "type": [
+                "number",
+                "integer"
+            ]
+        },
+        "input-patterns": {
+            "description": "List of file patterns (e.g., '*.jpg', '*.png', '*.mp4') used if the input-source is a directory.",
+            "type": "array",
+            "items": {
+                "type": "string"
+            }
+        },
+        "input-source": {
+            "description": "Input directory containing source image or video files based on input-patterns, or the full path and filename for an individual image or video.",
+            "type": "string"
+        },
+        "input-depthmap": {
+            "description": "Only attempted if this is provided. Input directory with precomputed depthmaps associated with input-source. File names and types must match exactly; otherwise, the depth information will be generated. The depthraw files take priority if available.",
+            "type": "string"
+        },
+        "input-depthraw": {
+            "description": "Only attempted if this is provided. Input directory with precomputed depthraws associated with input-source. File names and types must match exactly; otherwise, the depth information will be generated.",
+            "type": "string"
+        },
+        "output-stereo": {
+            "description": "Only created if this is provided. Output location for stereoscopic results as a directory or explicit file name and path, depending on input-source.",
+            "type": "string"
+        },
+        "output-padded": {
+            "description": "Only created if this is provided. Output location for padded version of stereoscopic results as a directory or explicit file name and path, depending on input-source.",
+            "type": "string"
+        },
+        "output-anaglyph": {
+            "description": "Only created if this is provided. Output location for anaglyph (red/blue) version of results as a directory or explicit file name and path, depending on input-source.",
+            "type": "string"
+        },
+        "output-depthmap": {
+            "description": "Only created if this is provided. Output location for 'colorized' grayscale version of depth information as a directory or explicit file name and path, depending on input-source.",
+            "type": "string"
+        },
+        "output-depthraw": {
+            "description": "Only saved if this is populated. Output location for raw unaltered depth information as a directory or explicit file name and path, depending on input-source. These files are useful for later use as input-depthmap files and are more performant than depthmaps.",
+            "type": "string"
+        },
+        "stereo-intensity": {
+            "description": "Control the intensity of stereoscopic divergence (3D effect) by adjusting the left and right eye perspectives. Values range from 0.1 to 10.0 (steps of 0.1), but 1.0 to 3.0 is recommended. Too low values may not produce noticeable 3D effects, while too high values may cause eye strain.",
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 10.0,
+            "multipleOf": 0.1
+        }
+    },
+    "required": [],
+    "additionalProperties": {
+        "not": {
+            "propertyNames": {
+                "pattern": "^\\$schema$"
+            }
+        }
+    },
+    "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "precision-type": {
+                        "const": "factor"
+                    }
+                },
+                "required": [
+                    "precision-type"
+                ]
+            },
+            "then": {
+                "properties": {
+                    "precision-width": {
+                        "type": "number",
+                        "minimum": 0.1,
+                        "maximum": 10.0,
+                        "multipleOf": 0.1
+                    },
+                    "precision-height": {
+                        "type": "number",
+                        "minimum": 0.1,
+                        "maximum": 10.0,
+                        "multipleOf": 0.1
+                    }
+                }
+            },
+            "else": {
+                "properties": {
+                    "precision-width": {
+                        "type": "integer",
+                        "minimum": 128,
+                        "maximum": 2048,
+                        "multipleOf": 128
+                    },
+                    "precision-height": {
+                        "type": "integer",
+                        "minimum": 128,
+                        "maximum": 2048,
+                        "multipleOf": 128
+                    }
+                }
+            }
+        }
+    ]
+}
