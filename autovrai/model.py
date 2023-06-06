@@ -3,14 +3,14 @@ from ZoeDepth.zoedepth.utils.config import get_config
 from ZoeDepth.zoedepth.utils.misc import colorize, save_raw_16bit
 
 
-def model_loader(model_name, device_name):
-    if model_name.lower().startswith('zoedepth'):
-        return load_zoedepth(model_name, device_name)
-
-    raise ValueError("Invalid model name")
+ZoeDepth_DepthModel = DepthModel
+ZoeDepth_colorize = colorize
+ZoeDepth_save_raw_16bit = save_raw_16bit
 
 
-def load_zoedepth(model_name, device_name):
+def model_loader(config):
+    model_name = config['model-name'].lower()
+
     if model_name == "zoedepth_nk":
         conf = get_config("zoedepth_nk", "infer")
     elif model_name == "zoedepth_n":
@@ -21,6 +21,6 @@ def load_zoedepth(model_name, device_name):
         raise ValueError("Invalid model name")
 
     model = build_model(conf)
-    model.to(device_name)
+    model.to(config['device-name'])
 
     return model

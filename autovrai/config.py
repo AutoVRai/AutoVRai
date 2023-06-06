@@ -1,10 +1,14 @@
+# this config stuff is where i spent more time than anywhere else when transforming this project
+# from my hacky prototype to a somewhat less hacky first version i would actually let the world see
+
+
 import argparse
 import json
 import jsonschema
 import os
 
 
-# treating these as a singletons
+# treating these basically as singletons
 SCHEMA = None
 DEFAULTS = None
 
@@ -17,14 +21,24 @@ def load_schema():
     return SCHEMA
 
 
-def validate_config(config):
-    jsonschema.validate(config, load_schema())
+def validate_config(config, description):
+    schema = load_schema()
+    try:
+        jsonschema.validate(config, schema)
+    except jsonschema.ValidationError as e:
+        print("")
+        print(f"Validation error in the configuration file:\n{e.message}\n")
+        print(f"Validation description: {description}\n")
+        print(f"Error path: {' -> '.join(map(str, e.path))}\n")
+        print("Please fix the configuration file and try again.")
+        print("")
+        exit(1)
     return config
 
 
 def load_config(filepath):
     with open(filepath, 'r') as f:
-        return validate_config(json.load(f))
+        return validate_config(json.load(f), filepath)
 
 
 def load_defaults():
@@ -35,11 +49,15 @@ def load_defaults():
 
 
 def handle_argparse(schema, defaults):
+
     # Create the ArgumentParser
     parser = argparse.ArgumentParser(
         prog=schema['title'],
         description=schema['description']
     )
+
+    # Add the optional gui mode argument, this sends the application down a different path
+    parser.add_argument('--gui', action='store_true', help='Optional. This launches the gradio web app server instead of just processing. It will use all config info and overrides as the initial state of the web app. You can create multiple shortcuts to launch the web app pre-configured in different ways.')
 
     # Add the optional config file argument
     parser.add_argument('--config-file', type=str, help='Optional. Path to the configuration file to use instead of the defaults, other parameters will still override this configuration file')
@@ -49,19 +67,28 @@ def handle_argparse(schema, defaults):
         if prop == '$schema':
             continue
 
-        # if it is an array, set nargs and assign the array type to the base type, simplifies things
+        type_translation = {
+            'string': str,
+            'integer': int,
+            'number': float,
+        }
+        arg_type = None
+        nargs = None
+
+        # if it is an array, set nargs and use the array item type as a basic type lookup
         if details['type'] == 'array':
-            details['type'] = details['items']['type']
+            arg_type = type_translation[details['items']['type']]
             nargs = '+'
-        else:
-            nargs = None
 
-        # translate the basic types to the python types we need
-        arg_type = str if details['type'] == 'string' else int if details['type'] == 'integer' else float if details['type'] == 'number' else None
-
-        # we can just bring these in as a float because it can represent either type
-        if arg_type is None and details['type'] == ['number', 'integer']:
+        # we need to just pick one for compound types, these might need manually expanded
+        if details['type'] == ['number', 'integer'] or details['type'] == ['integer', 'number']:
             arg_type = float
+        if details['type'] == ['string', 'integer', 'number']:
+            arg_type = str
+
+        # translate the basic types to the python types we need, this isn't everything though
+        if arg_type is None:
+            arg_type = type_translation[details['type']]
 
         # make sure we aren't skipping or missing anything accidentally (these should never happen)
         if arg_type is None:
@@ -92,16 +119,16 @@ def interpret_config(defaults, args):
     config = defaults
     if args.config_file != None:
         custom = load_config(args.config_file)
-        validate_config(custom)
+        validate_config(custom, "CLI Specified Configuration File")
         config.update(custom)
-        validate_config(config)
+        validate_config(config, "After Merging With Defaults")
 
     # apply the command line parameter overrides to the config if there are any
     for prop, value in vars(args).items():
-        if prop == 'config_file' or value is None:
+        if prop =='gui' or prop == 'config_file' or prop =='config-file' or value is None:
             continue
         else:
             config[prop] = value
 
     # validate then return the final config object
-    return validate_config(config)
+    return validate_config(config, "After Applying CLI Overrides")

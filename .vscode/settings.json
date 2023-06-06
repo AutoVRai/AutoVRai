@@ -2,11 +2,13 @@
     "cSpell.words": [
         "asarray",
         "autovrai",
+        "cmap",
         "cuda",
         "depthmap",
         "depthmaps",
         "depthraw",
         "depthraws",
+        "devs",
         "dtype",
         "fastmath",
         "fourcc",

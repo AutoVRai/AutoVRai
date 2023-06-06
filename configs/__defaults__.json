@@ -2,7 +2,7 @@
     "$schema": "__schema__.json",
     "model-name": "zoedepth_nk",
     "device-name": "cuda",
-    "precision-mode": "dynamic",
+    "precision-mode": "manual",
     "precision-type": "factor",
     "precision-width": 1.0,
     "precision-height": 1.0,

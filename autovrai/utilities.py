@@ -33,7 +33,16 @@ def load_image(filename):
     return image
 
 
-def prep_directories(directories: list[str]):
+def prep_directories(config):
+    # Get the list of directories from the config
+    directories = [
+        config['output-stereo'],
+        config['output-padded'],
+        config['output-anaglyph'],
+        config['output-depthmap'],
+        config['output-depthraw'],
+    ]
+
     for directory in directories:
         # Skip empty directories
         if directory == '' or directory is None:

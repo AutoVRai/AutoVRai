@@ -1,14 +1,8 @@
-from autovrai import generate_argparse_and_interpret_config
-
-if __name__ == '__main__':
-    config = generate_argparse_and_interpret_config()
-    print(config)
+import gradio as gr
 
 
-# import argparse
-# import gradio as gr
-
-# from autovrai.model import model_loader
+def launch_gui(config, model):
+    print("--- AutoVR.ai ---", "oops, didn't finish building this yet")
 
 
 # with gr.Blocks() as demo:
