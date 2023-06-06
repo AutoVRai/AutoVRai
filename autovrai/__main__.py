@@ -56,6 +56,7 @@ if __name__ == '__main__':
         autovrai.launch_gui(config, model)
     else:
         print("--- AutoVR.ai ---", 'Processing...')
+        autovrai.process_image_directory(config, model)
 
     print("--- AutoVR.ai ---", "We're all done. Hope it worked!")
 

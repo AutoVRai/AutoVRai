@@ -5,3 +5,4 @@ from model import model_loader, ZoeDepth_DepthModel, ZoeDepth_colorize, ZoeDepth
 from gui import launch_gui
 from utilities import prep_directories, find_filenames, load_image
 from stereo import stereo_eyes, combine_stereo, combine_padded, combine_anaglyph
+from process import process_image_directory

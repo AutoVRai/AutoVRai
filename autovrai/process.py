@@ -53,7 +53,7 @@ def process_image_directory(config, model: autovrai.ZoeDepth_DepthModel):
 
         if config['output-stereo'] != '':
             stereo = autovrai.combine_stereo(left, right)
-            stereo.save(os.path.join(['output-stereo'], filepath))
+            stereo.save(os.path.join(config['output-stereo'], filepath))
         if config['output-padded'] != '':
             padded = autovrai.combine_padded(left, right, int(round(image.width*1.5)), int(round(image.height*1.5)))
             padded.save(os.path.join(config['output-padded'], filepath))
