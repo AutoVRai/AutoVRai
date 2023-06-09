@@ -63,10 +63,37 @@ if __name__ == "__main__":
     # main entry point for the program, it'll either launch the GUI or start immediately
     if args.gui:
         print("--- AutoVR.ai ---", "Launching gradio GUI...")
-        autovrai.launch_gui(config, model)
+        autovrai.launch_gui(model, config)
     else:
-        print("--- AutoVR.ai ---", "Processing...")
-        autovrai.process_image_directory(config, model)
+        input_type = config["input-type"]
+        input_source = config["input-source"]
+        source_type = autovrai.determine_file_or_path(input_source, "input-source")
+
+        print(
+            "--- AutoVR.ai ---",
+            f"Processing {input_type} from the {source_type}: {input_source}",
+        )
+
+        # for the CLI, if the input is a single file, we'll use the directory processing
+        # functions by tweaking the config a bit, this is slightly different than how
+        # the GUI works, it takes in an actual image and returns an image, but we are
+        # taking in a filename and need to save a file back out. this makes it act as if
+        # the user had selected a directory containing a single file using the exact
+        # filename as the only pattern to match, letting everything else work as normal
+        if source_type == "file":
+            config["input-source"] = os.path.dirname(input_source)
+            config["input-patterns"] = [os.path.basename(input_source)]
+
+        # now we just need to call the appropriate image or video processing function
+        if input_type == "videos" or input_type == "video":
+            autovrai.process_video_directory(model, config)
+        elif input_type == "images" or input_type == "image":
+            autovrai.process_image_directory(model, config)
+        else:
+            raise Exception(
+                "Invalid input type or source type mismatch. "
+                "This should have been caught by the schema validation."
+            )
 
     print("--- AutoVR.ai ---", "We're all done. Hope it worked!")
 
