@@ -11,18 +11,29 @@ def combine_anaglyph(left, right):
     return Image.fromarray(generate_anaglyph(left, right))
 
 
-def combine_padded(left, right, width, height, color = (0, 0, 0)):
+def combine_padded(left, right, width, height, color=(0, 0, 0)):
     left_image = Image.fromarray(left)
     right_image = Image.fromarray(right)
 
     image = Image.new("RGB", (2 * width, height), color)
-    image.paste(left_image, (width//2 - left_image.width//2, height//2 - left_image.height//2))
-    image.paste(right_image, (width + width//2 - right_image.width//2, height//2 - right_image.height//2))
+    image.paste(
+        left_image,
+        (width // 2 - left_image.width // 2, height // 2 - left_image.height // 2),
+    )
+    image.paste(
+        right_image,
+        (
+            width + width // 2 - right_image.width // 2,
+            height // 2 - right_image.height // 2,
+        ),
+    )
 
     return image
 
 
-def stereo_eyes(image: Image, depth: np.ndarray, divergence: float, fill_technique = 'polylines_sharp'):
+def stereo_eyes(
+    image: Image, depth: np.ndarray, divergence: float, fill_technique="polylines_sharp"
+):
     original = np.array(image)
     width = original.shape[1]
 
@@ -32,18 +43,24 @@ def stereo_eyes(image: Image, depth: np.ndarray, divergence: float, fill_techniq
 
     diverge_pixels = ((divergence / 2) / 100.0) * width
 
-    left = apply_stereo_divergence_polylines(original, depth_normal, diverge_pixels, fill_technique)
-    right = apply_stereo_divergence_polylines(original, depth_normal, diverge_pixels * -1, fill_technique)
+    left = apply_stereo_divergence_polylines(
+        original, depth_normal, diverge_pixels, fill_technique
+    )
+    right = apply_stereo_divergence_polylines(
+        original, depth_normal, diverge_pixels * -1, fill_technique
+    )
 
     return left, right
 
 
 @njit(parallel=True)  # fastmath=True does not reasonably improve performance
-def apply_stereo_divergence_polylines(original_image, normalized_depth, divergence_px: float, fill_technique):
+def apply_stereo_divergence_polylines(
+    original_image, normalized_depth, divergence_px: float, fill_technique
+):
     # This code treats rows of the image as polylines
     # It generates polylines, morphs them (applies divergence) to them, and then rasterizes them
     EPSILON = 1e-7
-    PIXEL_HALF_WIDTH = 0.45 if fill_technique == 'polylines_sharp' else 0.0
+    PIXEL_HALF_WIDTH = 0.45 if fill_technique == "polylines_sharp" else 0.0
     # PERF_COUNTERS = [0, 0, 0]
 
     h, w, c = original_image.shape
@@ -102,8 +119,12 @@ def apply_stereo_divergence_polylines(original_image, normalized_depth, divergen
         sg_pointer: int = 0
         # and index of the point that should be processed next
         pt_i: int = 0
-        for col in range(w):  # iterate over regions (that will be rasterizeed into pixels)
-            color = np.full(c, 0.5, dtype=np.float_)  # we start with 0.5 because of how floats are converted to ints
+        for col in range(
+            w
+        ):  # iterate over regions (that will be rasterizeed into pixels)
+            color = np.full(
+                c, 0.5, dtype=np.float_
+            )  # we start with 0.5 because of how floats are converted to ints
             while pt[pt_i][0] < col:
                 pt_i += 1
             pt_i -= 1  # pt_i now points to the dot before the region start
@@ -137,7 +158,9 @@ def apply_stereo_divergence_polylines(original_image, normalized_depth, divergen
                     # PERF_COUNTERS[1] += 1
                     best_csg_closeness: float = -EPSILON
                     for csg_i in range(csg_end):
-                        ip_k = (coord_center - csg[csg_i][0]) / (csg[csg_i][3] - csg[csg_i][0])
+                        ip_k = (coord_center - csg[csg_i][0]) / (
+                            csg[csg_i][3] - csg[csg_i][0]
+                        )
                         # assert 0.0 <= ip_k <= 1.0
                         closeness = (1.0 - ip_k) * csg[csg_i][1] + ip_k * csg[csg_i][4]
                         if best_csg_closeness < closeness and 0.0 < ip_k < 1.0:
@@ -150,10 +173,13 @@ def apply_stereo_divergence_polylines(original_image, normalized_depth, divergen
                     color += original_image[row][col_l] * significance
                 else:
                     # PERF_COUNTERS[2] += 1
-                    ip_k = (coord_center - csg[best_csg_i][0]) / (csg[best_csg_i][3] - csg[best_csg_i][0])
-                    color += (original_image[row][col_l] * (1.0 - ip_k) +
-                              original_image[row][col_r] * ip_k
-                              ) * significance
+                    ip_k = (coord_center - csg[best_csg_i][0]) / (
+                        csg[best_csg_i][3] - csg[best_csg_i][0]
+                    )
+                    color += (
+                        original_image[row][col_l] * (1.0 - ip_k)
+                        + original_image[row][col_r] * ip_k
+                    ) * significance
                 pt_i += 1
             derived_image[row][col] = np.asarray(color, dtype=np.uint8)
     # print(PERF_COUNTERS)
@@ -163,7 +189,9 @@ def apply_stereo_divergence_polylines(original_image, normalized_depth, divergen
 @njit(parallel=True)
 def generate_anaglyph(left, right):
     if left.shape != right.shape:
-        raise ValueError("Images for the left and right eye must be the same size to create an anaglyph")
+        raise ValueError(
+            "Images for the left and right eye must be the same size for an anaglyph"
+        )
 
     height = left.shape[0]
     width = left.shape[1]
@@ -180,4 +208,3 @@ def generate_anaglyph(left, right):
             anaglyph[h, w, 2] = right[h, w, 2]
 
     return anaglyph
-

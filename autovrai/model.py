@@ -9,7 +9,7 @@ ZoeDepth_save_raw_16bit = save_raw_16bit
 
 
 def model_loader(config):
-    model_name = config['model-name'].lower()
+    model_name = config["model-name"].lower()
 
     if model_name == "zoedepth_nk":
         conf = get_config("zoedepth_nk", "infer")
@@ -21,6 +21,6 @@ def model_loader(config):
         raise ValueError("Invalid model name")
 
     model = build_model(conf)
-    model.to(config['device-name'])
+    model.to(config["device-name"])
 
     return model

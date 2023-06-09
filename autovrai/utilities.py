@@ -1,7 +1,5 @@
 import os
 import glob
-import json
-import jsonschema
 from PIL import Image
 
 
@@ -36,16 +34,16 @@ def load_image(filename):
 def prep_directories(config):
     # Get the list of directories from the config
     directories = [
-        config['output-stereo'],
-        config['output-padded'],
-        config['output-anaglyph'],
-        config['output-depthmap'],
-        config['output-depthraw'],
+        config["output-stereo"],
+        config["output-padded"],
+        config["output-anaglyph"],
+        config["output-depthmap"],
+        config["output-depthraw"],
     ]
 
     for directory in directories:
         # Skip empty directories
-        if directory == '' or directory is None:
+        if directory == "" or directory is None:
             continue
 
         # Check if directory exists, create it if not
@@ -55,4 +53,3 @@ def prep_directories(config):
         # Double check that the directory exists now
         if not os.path.exists(directory):
             raise FileNotFoundError(f"Directory could not be created: {directory}")
-
