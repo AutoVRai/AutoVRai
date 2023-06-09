@@ -24,3 +24,8 @@ def model_loader(config):
     model.to(config["device-name"])
 
     return model
+
+
+def set_model_precision(model: ZoeDepth_DepthModel, width, height, factor):
+    model.core.prep.resizer._Resize__width = int(round(width * factor))
+    model.core.prep.resizer._Resize__height = int(round(height * factor))
