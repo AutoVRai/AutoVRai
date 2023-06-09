@@ -3,7 +3,8 @@
     "model-name": "zoedepth_nk",
     "device-name": "cuda",
     "precision-mode": "dynamic",
-    "precision-factor": 1.0,
+    "precision-factor": 2.0,
+    "input-type": "images",
     "input-patterns": ["*.jpg", "*.jpeg", "*.png"],
     "input-source": "input",
     "input-depthmap": "",
@@ -13,5 +14,7 @@
     "output-anaglyph": "",
     "output-depthmap": "",
     "output-depthraw": "",
+    "padded-color": "rgb(0, 0, 0)",
+    "padded-factor": 1.5,
     "stereo-intensity": 2.0
 }

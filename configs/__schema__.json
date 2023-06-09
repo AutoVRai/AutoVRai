@@ -44,8 +44,13 @@
             "maximum": 2048,
             "multipleOf": 128
         },
+        "input-type": {
+            "description": "Select the input type: 'image', 'video', 'images' or 'videos'. If 'image' or 'video', the input-source is a single file. If 'images' or 'videos', the input-source is a directory containing multiple files based on input-patterns.",
+            "type": "string",
+            "enum": ["image", "video", "images", "videos"]
+        },
         "input-patterns": {
-            "description": "List of file patterns (e.g., '*.jpg', '*.png', '*.mp4') used if the input-source is a directory.",
+            "description": "List of file patterns (e.g., '*.jpg', '*.png', '*.mp4') used if the input-type is 'images' or 'videos' and the input-source is a directory.",
             "type": "array",
             "items": {
                 "type": "string"
@@ -83,6 +88,32 @@
             "description": "Only saved if this is populated. Output location for raw unaltered depth information as a directory or explicit file name and path, depending on input-source. These files are useful for later use as input-depthmap files and are more performant than depthmaps.",
             "type": "string"
         },
+        "padded-color": {
+            "description": "The color to be used for the padding. This should be a string such as 'rgb(0, 0, 0)' for black.",
+            "type": "string",
+            "pattern": "^rgb\\((\\s*\\d{1,3}\\s*,){2}\\s*\\d{1,3}\\s*\\)$"
+        },
+        "padded-factor": {
+            "description": "A number from 0.1 to 10.0 (steps of 0.1). A factor (multiple/percentage) of 1.0 maintains the same size as the input's resolution and would do nothing, 0.5 halves it, and 2.0 doubles it. This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 10.0,
+            "multipleOf": 0.1
+        },
+        "padded-width": {
+            "description": "Integer from 128 to 2048 (steps of 128). This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
+            "type": "integer",
+            "minimum": 128,
+            "maximum": 4096,
+            "multipleOf": 128
+        },
+        "padded-height": {
+            "description": "Integer from 128 to 2048 (steps of 128). This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
+            "type": "integer",
+            "minimum": 128,
+            "maximum": 4096,
+            "multipleOf": 128
+        },
         "stereo-intensity": {
             "description": "Control the intensity of stereoscopic divergence (3D effect) by adjusting the left and right eye perspectives. Values range from 0.1 to 10.0 (steps of 0.1), but 1.0 to 3.0 is recommended. Too low values may not produce noticeable 3D effects, while too high values may cause eye strain.",
             "type": "number",
@@ -91,7 +122,7 @@
             "multipleOf": 0.1
         }
     },
-    "required": [],
+    "required": ["input-type"],
     "additionalProperties": {
         "not": {
             "propertyNames": {
@@ -100,6 +131,59 @@
         }
     },
     "allOf": [
+        {
+            "if": {
+                "properties": {
+                    "input-type": {
+                        "enum": ["videos", "images"]
+                    }
+                }
+            },
+            "then": {
+                "required": ["input-patterns"]
+            },
+            "else": {
+                "not": {
+                    "required": ["input-patterns"]
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["padded-factor"]
+            },
+            "then": {
+                "not": {
+                    "required": ["padded-width"]
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["padded-factor"]
+            },
+            "then": {
+                "not": {
+                    "required": ["padded-height"]
+                }
+            }
+        },
+        {
+            "if": {
+                "required": ["padded-width"]
+            },
+            "then": {
+                "required": ["padded-height"]
+            }
+        },
+        {
+            "if": {
+                "required": ["padded-height"]
+            },
+            "then": {
+                "required": ["padded-width"]
+            }
+        },
         {
             "if": {
                 "required": ["precision-factor"]
