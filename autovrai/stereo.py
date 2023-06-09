@@ -11,7 +11,7 @@ def combine_anaglyph(left, right):
     return Image.fromarray(generate_anaglyph(left, right))
 
 
-def combine_padded(left, right, width, height, color=(0, 0, 0)):
+def combine_padded(left, right, width, height, color):
     left_image = Image.fromarray(left)
     right_image = Image.fromarray(right)
 
