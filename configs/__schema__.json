@@ -11,49 +11,38 @@
         "model-name": {
             "description": "Select the model: 'zoedepth_nk', 'zoedepth_n', or 'zoedepth_k'. The default model 'zoedepth_nk' is suitable for most use cases. 'zoedepth_n' sometimes works well for indoor close-up shots. 'zoedepth_k' may be better for outdoor, but you can test for yourself. Share your opinions and experiences with these models!",
             "type": "string",
-            "enum": [
-                "zoedepth_nk",
-                "zoedepth_n",
-                "zoedepth_k"
-            ]
+            "enum": ["zoedepth_nk", "zoedepth_n", "zoedepth_k"]
         },
         "device-name": {
             "description": "Select the device: 'cpu' or 'cuda'. Use 'cuda' for GPU processing, which significantly improves speed. For multiple GPUs, use 'cuda:0', 'cuda:1', etc. Basic parallel processing is supported by splitting files across GPUs (testers needed!).",
             "type": "string",
-            "enum": [
-                "cpu",
-                "cuda"
-            ]
+            "enum": ["cpu", "cuda"]
         },
         "precision-mode": {
             "description": "Select the precision mode: 'dynamic' or 'manual'. Dynamic mode automatically scales down precision if memory limitations are encountered. Manual mode throws an error if the defined precision fails. It is recommended to use dynamic mode unless there is a specific reason not to.",
             "type": "string",
-            "enum": [
-                "dynamic",
-                "manual"
-            ]
+            "enum": ["dynamic", "manual"]
         },
-        "precision-type": {
-            "description": "Select the precision type: 'factor' or 'pixels'. This determines if the precision-width and precision-height are factors (multiples/percentages) or absolute pixel values.",
-            "type": "string",
-            "enum": [
-                "factor",
-                "pixels"
-            ]
+        "precision-factor": {
+            "description": "A number from 0.1 to 10.0 (steps of 0.1). A factor (multiple/percentage) of 1.0 maintains the same size as the input's resolution, 0.5 halves it, and 2.0 doubles it. This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "type": "number",
+            "minimum": 0.1,
+            "maximum": 10.0,
+            "multipleOf": 0.1
         },
         "precision-width": {
-            "description": "Depending on precision-type, set a number from 0.1 to 10.0 (steps of 0.1) or an integer from 128 to 2048 (steps of 128). A factor of 1.0 maintains the same size as the input's resolution, 0.5 halves it, and 2.0 doubles it. This affects the quality of depth information calculated, not the input or output image resolutions.",
-            "type": [
-                "number",
-                "integer"
-            ]
+            "description": "Integer from 128 to 2048 (steps of 128). This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "type": "integer",
+            "minimum": 128,
+            "maximum": 2048,
+            "multipleOf": 128
         },
         "precision-height": {
-            "description": "Depending on precision-type, set a number from 0.1 to 10.0 (steps of 0.1) or an integer from 128 to 2048 (steps of 128). A factor of 1.0 maintains the same size as the input's resolution, 0.5 halves it, and 2.0 doubles it. This affects the quality of depth information calculated, not the input or output image resolutions.",
-            "type": [
-                "number",
-                "integer"
-            ]
+            "description": "Integer from 128 to 2048 (steps of 128). This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "type": "integer",
+            "minimum": 128,
+            "maximum": 2048,
+            "multipleOf": 128
         },
         "input-patterns": {
             "description": "List of file patterns (e.g., '*.jpg', '*.png', '*.mp4') used if the input-source is a directory.",
@@ -113,46 +102,38 @@
     "allOf": [
         {
             "if": {
-                "properties": {
-                    "precision-type": {
-                        "const": "factor"
-                    }
-                },
-                "required": [
-                    "precision-type"
-                ]
+                "required": ["precision-factor"]
             },
             "then": {
-                "properties": {
-                    "precision-width": {
-                        "type": "number",
-                        "minimum": 0.1,
-                        "maximum": 10.0,
-                        "multipleOf": 0.1
-                    },
-                    "precision-height": {
-                        "type": "number",
-                        "minimum": 0.1,
-                        "maximum": 10.0,
-                        "multipleOf": 0.1
-                    }
+                "not": {
+                    "required": ["precision-width"]
                 }
+            }
+        },
+        {
+            "if": {
+                "required": ["precision-factor"]
             },
-            "else": {
-                "properties": {
-                    "precision-width": {
-                        "type": "integer",
-                        "minimum": 128,
-                        "maximum": 2048,
-                        "multipleOf": 128
-                    },
-                    "precision-height": {
-                        "type": "integer",
-                        "minimum": 128,
-                        "maximum": 2048,
-                        "multipleOf": 128
-                    }
+            "then": {
+                "not": {
+                    "required": ["precision-height"]
                 }
+            }
+        },
+        {
+            "if": {
+                "required": ["precision-width"]
+            },
+            "then": {
+                "required": ["precision-height"]
+            }
+        },
+        {
+            "if": {
+                "required": ["precision-height"]
+            },
+            "then": {
+                "required": ["precision-width"]
             }
         }
     ]
