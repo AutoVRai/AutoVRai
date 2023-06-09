@@ -1,4 +1,17 @@
 {
+    "editor.rulers": [88],
+    "files.insertFinalNewline": true,
+    "files.trimTrailingWhitespace": true,
+    "prettier.tabWidth": 4,
+    "python.formatting.provider": "none",
+    "[json]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true
+    },
+    "[python]": {
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true
+    },
     "cSpell.words": [
         "asarray",
         "autovrai",
@@ -10,6 +23,7 @@
         "depthraws",
         "devs",
         "dtype",
+        "esbenp",
         "fastmath",
         "fourcc",
         "fromarray",
@@ -25,6 +39,7 @@
         "moviepy",
         "ndarray",
         "njit",
+        "numba",
         "polyline",
         "polylines",
         "prange",
