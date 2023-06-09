@@ -49,6 +49,7 @@
         "tqdm",
         "trange",
         "videofile",
+        "VRAM",
         "zoedepth"
     ]
 }
