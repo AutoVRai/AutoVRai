@@ -1,0 +1,10 @@
+# let me know if i've missed anything
+gradio
+jsonschema
+numba
+numpy
+opencv-python
+Pillow
+torch
+torchvision
+tqdm

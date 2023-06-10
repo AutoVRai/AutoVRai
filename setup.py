@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="AutoVRai",
-    version="0.4",
+    version="0.5",
     description="AI-powered toolkit for converting 2D media into immersive VR using local hardware",
     author="Brian Jorden",
     license="MIT",
@@ -17,6 +17,15 @@ setup(
     },
     python_requires=">=3.10",
     install_requires=[
-        # there are several, not sure exactly what yet, sorry...
+        # let me know if i've missed anything
+        "gradio",
+        "jsonschema",
+        "numba",
+        "numpy",
+        "opencv-python",
+        "Pillow",
+        "torch",
+        "torchvision",
+        "tqdm",
     ],
 )
