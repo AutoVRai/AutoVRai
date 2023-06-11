@@ -1,7 +1,10 @@
 import os
 import cv2
+import sys
 import glob
+import logging
 from PIL import Image
+from contextlib import contextmanager
 
 
 def find_filenames(location, patterns):
@@ -81,3 +84,28 @@ def determine_file_or_path(file_or_path, context):
             f"Problem determining if {context} is file or directory. "
             f"({context}: {file_or_path})"
         )
+
+
+@contextmanager
+def suppress_output():
+    # save the current logger information
+    logger = logging.getLogger()
+    current_level = logger.getEffectiveLevel()
+
+    # save the current stdout
+    original_stdout = sys.stdout
+
+    # redirect stdout to a null file
+    sys.stdout = open(os.devnull, "w")
+
+    # suppress most of the logging output
+    logger.setLevel(logging.ERROR)
+
+    try:
+        yield
+    finally:
+        # restore the original logger information
+        logger.setLevel(current_level)
+        # Restore the original stdout
+        sys.stdout.close()
+        sys.stdout = original_stdout
