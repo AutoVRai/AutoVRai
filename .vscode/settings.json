@@ -47,6 +47,7 @@
         "rasterizes",
         "rasterizing",
         "resizer",
+        "scipy",
         "torchvision",
         "tqdm",
         "trange",

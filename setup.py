@@ -24,6 +24,7 @@ setup(
         "numpy",
         "opencv-python",
         "Pillow",
+        "scipy",
         "torch",
         "torchvision",
         "tqdm",
