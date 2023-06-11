@@ -123,13 +123,6 @@
         }
     },
     "required": ["input-type"],
-    "additionalProperties": {
-        "not": {
-            "propertyNames": {
-                "pattern": "^\\$schema$"
-            }
-        }
-    },
     "allOf": [
         {
             "if": {
