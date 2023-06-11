@@ -50,20 +50,12 @@ if __name__ == "__main__":
     # it MUST be re-validated if it is modified
     config = autovrai.interpret_config(defaults, args)
 
-    print("--- AutoVR.ai ---", "Configuration loaded successfully. Loading model...")
-    print(
-        "--- AutoVR.ai ---",
-        "(you can ignore all the ZoeDepth output, we change things later)",
-    )
-
-    model = autovrai.model_loader(config)
-
-    print("--- AutoVR.ai ---", "Model loaded successfully. Ready!")
+    print("--- AutoVR.ai ---", "Configuration loaded successfully.")
 
     # main entry point for the program, it'll either launch the GUI or start immediately
     if args.gui:
         print("--- AutoVR.ai ---", "Launching gradio GUI...")
-        autovrai.launch_gui(model, config)
+        autovrai.launch_gui(config)
     else:
         input_type = config["input-type"]
         input_source = config["input-source"]
@@ -86,9 +78,9 @@ if __name__ == "__main__":
 
         # now we just need to call the appropriate image or video processing function
         if input_type == "videos" or input_type == "video":
-            autovrai.process_video_directory(model, config)
+            autovrai.process_video_directory(config)
         elif input_type == "images" or input_type == "image":
-            autovrai.process_image_directory(model, config)
+            autovrai.process_image_directory(config)
         else:
             raise Exception(
                 "Invalid input type or source type mismatch. "

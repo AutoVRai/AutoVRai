@@ -1,6 +1,4 @@
 import os
-import time
-import numpy as np
 from tqdm import trange
 from PIL import Image
 from collections import namedtuple
@@ -8,7 +6,7 @@ from collections import namedtuple
 import autovrai
 
 
-def process_single_video(model: autovrai.ZoeDepth_DepthModel, config, video):
+def process_single_video(config, video):
     print(
         "This will be implemented soon in another version, but for now you can use the "
         "video shredder and video stitcher from the scripts directory."
@@ -16,7 +14,7 @@ def process_single_video(model: autovrai.ZoeDepth_DepthModel, config, video):
     pass
 
 
-def process_video_directory(model: autovrai.ZoeDepth_DepthModel, config):
+def process_video_directory(config):
     autovrai.prep_directories(config)
     print(
         "This will be implemented soon in another version, but for now you can use the "
@@ -25,7 +23,7 @@ def process_video_directory(model: autovrai.ZoeDepth_DepthModel, config):
     pass
 
 
-def process_single_image(model: autovrai.ZoeDepth_DepthModel, config, image):
+def process_single_image(config, image):
     print(
         "This is only used by the GUI interface and will be implemented soon in "
         "another version, but you can place a single image in the input directory."
@@ -33,7 +31,7 @@ def process_single_image(model: autovrai.ZoeDepth_DepthModel, config, image):
     pass
 
 
-def process_image_directory(model: autovrai.ZoeDepth_DepthModel, config):
+def process_image_directory(config):
     autovrai.prep_directories(config)
 
     filenames = autovrai.find_filenames(
@@ -44,8 +42,9 @@ def process_image_directory(model: autovrai.ZoeDepth_DepthModel, config):
     precision = determine_precision_info(config)
     print("--- AutoVR.ai ---", "Using precision:", precision)
 
-    # Add this line before the loop processing thousands of images
+    # Add this line before the loop processing
     factors = {}
+    model = None
 
     for i in trange(file_count):
         filename = filenames[i]
@@ -53,6 +52,7 @@ def process_image_directory(model: autovrai.ZoeDepth_DepthModel, config):
 
         # load the actual image from the file
         image = autovrai.load_image(filename)
+        depth = None
 
         # determine the initial precision settings to use
         if precision.type == "pixels":
@@ -70,7 +70,7 @@ def process_image_directory(model: autovrai.ZoeDepth_DepthModel, config):
         # fail if we run out of VRAM, or dynamically where the precision used will be
         # reduced automatically if an error is encountered
         if precision.mode == "manual":
-            autovrai.set_model_precision(model, width, height, factor)
+            model = autovrai.model_loader(config, width, height, factor)
             depth = model.infer_pil(image, output_type="numpy")
         elif precision.mode == "dynamic":
             success = False
@@ -83,7 +83,7 @@ def process_image_directory(model: autovrai.ZoeDepth_DepthModel, config):
             # attempt to generate a depth map, but reduce the factor and retry if needed
             while not success and factor > 0:
                 try:
-                    autovrai.set_model_precision(model, width, height, factor)
+                    model = autovrai.model_loader(config, width, height, factor)
                     depth = model.infer_pil(image, output_type="numpy")
                     success = True
                 except Exception as e:
@@ -95,7 +95,9 @@ def process_image_directory(model: autovrai.ZoeDepth_DepthModel, config):
                         f"and (factor: {factor}). "
                         "Retrying with a lower factor...",
                     )
-                    time.sleep(1)
+                    del depth
+                    depth = None
+                    model = autovrai.model_unloader(model)
                     factor = round(factor - 0.1, 1)
 
             # once the depth information has been generated, save the final factor used
@@ -119,6 +121,8 @@ def process_image_directory(model: autovrai.ZoeDepth_DepthModel, config):
         f"Processed {file_count} images. "
         f"The final precision factor settings used: {factors}",
     )
+
+    model = autovrai.model_unloader(model)
 
 
 def save_image_outputs(config, image, depth, left, right, filepath):
