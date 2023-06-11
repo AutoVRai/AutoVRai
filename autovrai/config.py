@@ -1,5 +1,5 @@
-# this config stuff is where i spent more time than anywhere else when transforming this
-# project from my hacky prototype to a somewhat less hacky first version i would
+# this config stuff is where i spent more time than anywhere else when transforming
+# the project from my hacky prototype to a somewhat less hacky first version i would
 # actually let the world see
 
 
@@ -46,6 +46,7 @@ def load_defaults():
     global DEFAULTS
     if DEFAULTS == None:
         DEFAULTS = load_config(os.path.join("configs", "__defaults__.json"))
+
     return DEFAULTS
 
 
@@ -96,13 +97,12 @@ def handle_argparse(schema, defaults):
             nargs = "+"
 
         # we need to pick one for compound types, these might need manually expanded
-        if details["type"] == ["number", "integer"] or details["type"] == [
-            "integer",
-            "number",
-        ]:
-            arg_type = float
         if details["type"] == ["string", "integer", "number"]:
             arg_type = str
+        if details["type"] == ["number", "integer"]:
+            arg_type = float
+        if details["type"] == ["integer", "number"]:
+            arg_type = float
 
         # translate the basic types to the python types we need, this isn't everything
         if arg_type is None:
@@ -147,12 +147,8 @@ def interpret_config(defaults, args):
 
     # apply the command line parameter overrides to the config if there are any
     for prop, value in vars(args).items():
-        if (
-            prop == "gui"
-            or prop == "config_file"
-            or prop == "config-file"
-            or value is None
-        ):
+        prop = prop.replace("_", "-")
+        if prop == "gui" or prop == "config-file" or value is None:
             continue
         else:
             config[prop] = value
