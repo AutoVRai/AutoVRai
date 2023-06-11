@@ -1,7 +1,7 @@
 import gradio as gr
 
 
-def launch_gui(config, model):
+def launch_gui(config):
     print("--- AutoVR.ai ---", "oops, didn't finish building this yet")
 
 
