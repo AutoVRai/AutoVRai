@@ -88,7 +88,6 @@ def handle_argparse(schema, defaults):
             "state of the web app. You can create multiple shortcuts to launch the "
             "web app to be pre-configured in different ways."
         ),
-        action=SingleUseAction,
     )
 
     # Add arguments based on the schema properties
