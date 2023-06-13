@@ -1,0 +1,6 @@
+# Ignore everything in this directory
+*
+# Except this .gitignore file
+!.gitignore
+# Except the project's standard files
+!__*__.json

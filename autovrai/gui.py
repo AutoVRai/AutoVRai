@@ -1,44 +1,137 @@
 import gradio as gr
 
-
-def launch_gui(config):
-    print("--- AutoVR.ai ---", "oops, didn't finish building this yet")
+import autovrai
 
 
-# with gr.Blocks() as demo:
-
-#     with gr.Tab("Single Image"):
-#         with gr.Row():
-#             input_image = gr.Image(label="Input Image", type='pil', elem_id='img-display-input').style(height="auto")
-#             depth_image = gr.Image(label="Depth Map", elem_id='img-display-depthmap')
-#         with gr.Row():
-#             stereo_image = gr.Image(label="Stereo Image", elem_id='img-display-stereo')
-#             padded_image = gr.Image(label="Padded Image", elem_id='img-display-padded')
-#         with gr.Row():
-#             anaglyph_image = gr.Image(label="Anaglyph Image", elem_id='img-display-anaglyph')
-#         submit_single = gr.Button("Submit Single")
-#         submit_single.click(run_single_image, inputs=[input_image], outputs=[depth_image, stereo_image, padded_image, anaglyph_image])
+CONFIG = None
+PROPS = None
+INPUTS = None
 
 
-#     with gr.Tab("Image Directory"):
-#         with gr.Row():
-#             image_location = gr.Textbox(label="Source Image Location", placeholder="Path to source image directory")
-#         with gr.Row():
-#             stereo_location = gr.Textbox(label="Output Stereo Location", placeholder="Path to output stereo image directory, leave blank to skip")
-#         with gr.Row():
-#             padded_location = gr.Textbox(label="Output Padded Location", placeholder="Path to output padded image directory, leave blank to skip")
-#         with gr.Row():
-#             anaglyph_location = gr.Textbox(label="Output Anaglyph Location", placeholder="Path to output anaglyph image directory, leave blank to skip")
-#         with gr.Row():
-#             depthmap_location = gr.Textbox(label="Output Depthmap Location", placeholder="Path to output depthmap image directory, leave blank to skip")
-#         submit_directory = gr.Button("Submit Directory")
-#         submit_directory.click(run_image_directory, inputs=[image_location, stereo_location, padded_location, anaglyph_location, depthmap_location], outputs=[])
+# this is a simplified way to build out some of the base components, but won't be used
+# for the more complex or non-conforming ones
+def component(name, kind=None):
+    global CONFIG, PROPS, INPUTS
+
+    # try to get all of the common attributes based on the name of our property
+    type = PROPS[name].get("type", None)
+    enums = PROPS[name].get("enum", None)
+    min = PROPS[name].get("minimum", None)
+    max = PROPS[name].get("maximum", None)
+    step = PROPS[name].get("multipleOf", None)
+    item = PROPS[name].get("items.type", None)
+    info = PROPS[name].get("description", None)
+    default = CONFIG.get(name, None)
+
+    input = None
+
+    if kind == None:
+        if enums != None:
+            kind = "Radio"
+        elif type == "string" or type == "array":
+            kind = "Textbox"
+        elif type == "integer" or type == "number":
+            kind = "Slider"
+        elif type == "boolean":
+            kind = "Checkbox"
+        else:
+            raise ValueError(f"Property: {name} - Unsupported component type: {type}")
+
+    if kind == "Dropdown":
+        input = gr.Dropdown(label=name, choices=enums, info=info, value=default)
+    elif kind == "Radio":
+        input = gr.Radio(label=name, choices=enums, info=info, value=default)
+    elif kind == "Textbox":
+        input = gr.Textbox(label=name, info=info, value=default)
+    elif kind == "Directory":
+        input = gr.File(label=name, info=info, file_count="directory")
+    elif kind == "Slider":
+        input = gr.Slider(
+            label=name,
+            minimum=min,
+            maximum=max,
+            step=step,
+            info=info,
+            value=default,
+        )
+    elif kind == "Checkbox":
+        input = gr.Checkbox(label=name, info=info, value=default)
+    elif kind == "ColorPicker":
+        input = gr.ColorPicker(label=name, info=info, value=default)
+    else:
+        raise ValueError(f"Property: {name} - Unknown kind: {kind}")
+
+    INPUTS.add(input)
+    return input
 
 
-# if __name__ == '__main__':
-#     parser = argparse.ArgumentParser(description='WEB - AutoVR.ai - an AI-powered toolkit for converting 2D media into immersive VR using local hardware')
+def handle_inputs(inputs):
+    # clearing our config definition and rebuilding it from the inputs
+    global CONFIG
+    CONFIG = {}
+    for input, value in inputs.items():
+        if value == None or value == "":
+            continue
+        CONFIG[input.label] = value
 
-#     parser.add_argument('images', type=str, help='Path to image directory')
+    print("")
+    print("CONFIG: ", CONFIG)
+    print("")
 
 
-#     demo.queue().launch()
+def launch_gui(config, schema):
+    global CONFIG, PROPS, INPUTS
+    CONFIG = config
+    PROPS = schema["properties"]
+    INPUTS = {0}
+    INPUTS.clear()
+
+    with gr.Blocks() as gui:
+        with gr.Tab("Image Directory") as tab:
+            with gr.Row():
+                component("model-name")
+                component("device-name")
+            with gr.Row():
+                component("precision-mode")
+
+            with gr.Row():
+                component("precision-factor")
+            with gr.Row():
+                component("precision-width")
+            with gr.Row():
+                component("precision-height")
+            with gr.Row():
+                component("input-type")
+            with gr.Row():
+                component("input-patterns")
+            with gr.Row():
+                component("input-source", "Directory")
+            with gr.Row():
+                component("input-depthmap")
+            with gr.Row():
+                component("input-depthraw")
+            with gr.Row():
+                component("output-stereo")
+            with gr.Row():
+                component("output-padded")
+            with gr.Row():
+                component("output-anaglyph")
+            with gr.Row():
+                component("output-depthmap")
+            with gr.Row():
+                component("output-depthraw")
+            with gr.Row():
+                component("padded-color", "ColorPicker")
+            with gr.Row():
+                component("padded-factor")
+            with gr.Row():
+                component("padded-width")
+            with gr.Row():
+                component("padded-height")
+            with gr.Row():
+                component("stereo-intensity")
+
+            submit_directory = gr.Button("Submit Directory")
+            submit_directory.click(fn=handle_inputs, inputs=INPUTS, outputs=[])
+
+    gui.queue().launch(server_name="0.0.0.0")

@@ -19,30 +19,28 @@
             "enum": ["cpu", "cuda"]
         },
         "precision-mode": {
-            "description": "Select the precision mode: 'dynamic' or 'manual'. Dynamic mode automatically scales down precision if memory limitations are encountered. Manual mode throws an error if the defined precision fails. It is recommended to use dynamic mode unless there is a specific reason not to.",
+            "description": "Select the precision mode: 'dynamic' or 'manual'. Dynamic mode automatically scales down the precision if memory limitations are encountered. Manual mode throws an error if the defined precision fails. It is highly recommended to use dynamic mode unless there is a specific reason not to.",
             "type": "string",
             "enum": ["dynamic", "manual"]
         },
         "precision-factor": {
-            "description": "A number from 0.1 to 10.0 (steps of 0.1). A factor (multiple/percentage) of 1.0 maintains the same size as the input's resolution, 0.5 halves it, and 2.0 doubles it. This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "description": "A number from 0.1 to 10.0 (steps of 0.0625 aka 1/16th). A factor (multiple/percentage) of 1.0 maintains the same size as the input's resolution, 0.5 halves it, and 2.0 doubles it. This affects the quality of depth information calculated, not the input or output image resolutions.",
             "type": "number",
-            "minimum": 0.1,
+            "minimum": 0.0625,
             "maximum": 10.0,
-            "multipleOf": 0.1
+            "multipleOf": 0.0625
         },
         "precision-width": {
-            "description": "Integer from 128 to 2048 (steps of 128). This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "description": "Integer from 128 to 4096. This affects the quality of depth information calculated, not the input or output image resolutions.",
             "type": "integer",
             "minimum": 128,
-            "maximum": 2048,
-            "multipleOf": 128
+            "maximum": 4096
         },
         "precision-height": {
-            "description": "Integer from 128 to 2048 (steps of 128). This affects the quality of depth information calculated, not the input or output image resolutions.",
+            "description": "Integer from 128 to 4096. This affects the quality of depth information calculated, not the input or output image resolutions.",
             "type": "integer",
             "minimum": 128,
-            "maximum": 2048,
-            "multipleOf": 128
+            "maximum": 4096
         },
         "input-type": {
             "description": "Select the input type: 'image', 'video', 'images' or 'videos'. If 'image' or 'video', the input-source is a single file. If 'images' or 'videos', the input-source is a directory containing multiple files based on input-patterns.",
@@ -89,30 +87,28 @@
             "type": "string"
         },
         "padded-color": {
-            "description": "The color to be used for the padding. This should be a string such as 'rgb(0, 0, 0)' for black.",
+            "description": "The color to be used for the background/padding. This should be a hex RGB color string such as '#000000' for black.",
             "type": "string",
-            "pattern": "^rgb\\((\\s*\\d{1,3}\\s*,){2}\\s*\\d{1,3}\\s*\\)$"
+            "pattern": "^#([A-Fa-f0-9]{6})$"
         },
         "padded-factor": {
-            "description": "A number from 0.1 to 10.0 (steps of 0.1). A factor (multiple/percentage) of 1.0 maintains the same size as the input's resolution and would do nothing, 0.5 halves it, and 2.0 doubles it. This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
+            "description": "A number from 1.1 to 5.0 (steps of 0.1). A factor (multiple/percentage) of 1.0 maintains the same size as the input's resolution and would do nothing, 0.5 halves it, and 2.0 doubles it. This is the final size of EACH eye after being padded. This can help some image/video viewers to prevent zooming in too much.",
             "type": "number",
-            "minimum": 0.1,
-            "maximum": 10.0,
+            "minimum": 1.1,
+            "maximum": 5.0,
             "multipleOf": 0.1
         },
         "padded-width": {
-            "description": "Integer from 128 to 2048 (steps of 128). This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
+            "description": "Integer from 128 to 4096. This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
             "type": "integer",
             "minimum": 128,
-            "maximum": 4096,
-            "multipleOf": 128
+            "maximum": 4096
         },
         "padded-height": {
-            "description": "Integer from 128 to 2048 (steps of 128). This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
+            "description": "Integer from 128 to 4096. This is the final size of EACH eye after being padded. This can help some image/video viewers not over scale and zoom in too much.",
             "type": "integer",
             "minimum": 128,
-            "maximum": 4096,
-            "multipleOf": 128
+            "maximum": 4096
         },
         "stereo-intensity": {
             "description": "Control the intensity of stereoscopic divergence (3D effect) by adjusting the left and right eye perspectives. Values range from 0.1 to 10.0 (steps of 0.1), but 1.0 to 3.0 is recommended. Too low values may not produce noticeable 3D effects, while too high values may cause eye strain.",
@@ -124,23 +120,6 @@
     },
     "required": ["input-type"],
     "allOf": [
-        {
-            "if": {
-                "properties": {
-                    "input-type": {
-                        "enum": ["videos", "images"]
-                    }
-                }
-            },
-            "then": {
-                "required": ["input-patterns"]
-            },
-            "else": {
-                "not": {
-                    "required": ["input-patterns"]
-                }
-            }
-        },
         {
             "if": {
                 "required": ["padded-factor"]
@@ -213,5 +192,6 @@
                 "required": ["precision-width"]
             }
         }
-    ]
+    ],
+    "additionalProperties": false
 }

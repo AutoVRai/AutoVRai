@@ -2,14 +2,9 @@
 # expose as 'autovrai' to be easily imported by other files
 
 from gui import launch_gui
+from model import model_loader, model_unloader
 from config import load_schema, load_defaults, handle_argparse, interpret_config
-from model import (
-    model_loader,
-    model_unloader,
-    ZoeDepth_DepthModel,
-    ZoeDepth_colorize,
-    ZoeDepth_save_raw_16bit,
-)
+from stereo import stereo_eyes, combine_stereo, combine_padded, combine_anaglyph
 from utilities import (
     prep_directories,
     find_filenames,
@@ -17,6 +12,8 @@ from utilities import (
     load_video,
     determine_file_or_path,
     suppress_output,
+    colorize_depthmap,
+    save_depthraw,
 )
 from process import (
     process_image_directory,
@@ -24,4 +21,3 @@ from process import (
     process_single_image,
     process_single_video,
 )
-from stereo import stereo_eyes, combine_stereo, combine_padded, combine_anaglyph

@@ -13,9 +13,6 @@ parent_directory = os.path.dirname(current_file_path)
 # Get the grandparent directory (one level up from the parent directory)
 grandparent_directory = os.path.dirname(parent_directory)
 
-# Add the ?uncle? directory to the Python path (this is where the ZoeDepth package is)
-sys.path.insert(0, os.path.join(grandparent_directory, "ZoeDepth"))
-
 # Add the grandparent directory to the Python path
 sys.path.insert(0, grandparent_directory)
 
@@ -55,7 +52,7 @@ if __name__ == "__main__":
     # main entry point for the program, it'll either launch the GUI or start immediately
     if args.gui:
         print("--- AutoVR.ai ---", "Launching gradio GUI...")
-        autovrai.launch_gui(config)
+        autovrai.launch_gui(config, schema)
     else:
         input_type = config["input-type"]
         input_source = config["input-source"]

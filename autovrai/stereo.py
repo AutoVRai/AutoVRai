@@ -32,7 +32,10 @@ def combine_padded(left, right, width, height, color):
 
 
 def stereo_eyes(
-    image: Image, depth: np.ndarray, divergence: float, fill_technique="polylines_sharp"
+    image: Image,
+    depth: np.ndarray,
+    divergence: float,
+    fill_technique="polylines_sharp",
 ):
     original = np.array(image)
     width = original.shape[1]

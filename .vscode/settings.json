@@ -36,6 +36,7 @@
         "jsonschema",
         "kitti",
         "libx",
+        "matplotlib",
         "moviepy",
         "ndarray",
         "njit",
@@ -53,6 +54,7 @@
         "trange",
         "videofile",
         "VRAM",
+        "zoed",
         "zoedepth"
     ]
 }

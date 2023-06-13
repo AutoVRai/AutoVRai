@@ -50,10 +50,32 @@ def load_defaults():
     return DEFAULTS
 
 
+# this is a custom argparse action that ensures an argument is only provided once, i'm
+# not sure if there's a better way to do this, but it works for now. also, how is this
+# not a built in argparse action? it kinda seems like it should be...
+class SingleUseAction(argparse.Action):
+    def __call__(self, parser, namespace, values, option_string=None):
+        if getattr(namespace, self.dest) is not None:
+            parser.error(f"{option_string} can only be provided once.")
+        setattr(namespace, self.dest, values)
+
+
+# this does all the heavy lifting of building the argparse parser based on the schema
 def handle_argparse(schema, defaults):
-    # Create the ArgumentParser
+    # Create the actual ArgumentParser
     parser = argparse.ArgumentParser(
         prog=schema["title"], description=schema["description"]
+    )
+
+    # Add the optional config file argument, this will replace the defaults
+    parser.add_argument(
+        "--config",
+        type=str,
+        help=(
+            "Optional. Path to the configuration file to use instead of the defaults, "
+            "other parameters will still override this configuration file."
+        ),
+        action=SingleUseAction,
     )
 
     # Add the optional gui mode argument, sends the application down a different path
@@ -61,21 +83,12 @@ def handle_argparse(schema, defaults):
         "--gui",
         action="store_true",
         help=(
-            "Optional. This launches the gradio web app server instead of just "
+            "Optional. This launches the gradio app web server instead of just "
             "processing. It will use all config info and overrides as the initial "
             "state of the web app. You can create multiple shortcuts to launch the "
-            "web app pre-configured in different ways."
+            "web app to be pre-configured in different ways."
         ),
-    )
-
-    # Add the optional config file argument
-    parser.add_argument(
-        "--config-file",
-        type=str,
-        help=(
-            "Optional. Path to the configuration file to use instead of the defaults, "
-            "other parameters will still override this configuration file"
-        ),
+        action=SingleUseAction,
     )
 
     # Add arguments based on the schema properties
@@ -83,6 +96,7 @@ def handle_argparse(schema, defaults):
         if prop == "$schema":
             continue
 
+        # our basic types, haven't needed boolean yet...
         type_translation = {
             "string": str,
             "integer": int,
@@ -125,30 +139,80 @@ def handle_argparse(schema, defaults):
         else:
             default_info = ""
 
+        # bring it all together and add the argument to the parser
         parser.add_argument(
             f"--{prop}",
             nargs=nargs,
             type=arg_type,
             help=f"{details['description']}{default_info}",
+            action=SingleUseAction,
         )
 
-    # Return the parsed arguments
-    return parser.parse_args()
+    return special_error_checking(parser)
+
+
+def special_error_checking(parser):
+    # making sure there are no unknown arguments, they would almost certainly be a typo
+    args, unknowns = parser.parse_known_args()
+    if unknowns:
+        parser.error(f"Unknown arguments: {' '.join(unknowns)}")
+
+    # check for options that must be provided as a pair such as: --*-width or --*-height
+    if (args.precision_width is None) != (args.precision_height is None):
+        parser.error("--precision-width and --precision-height must both be provided.")
+    if (args.padded_width is None) != (args.padded_height is None):
+        parser.error("--padded-width and --padded-height must both be provided.")
+
+    # Check for bad combinations of `--*-width`, `--*-height`, and `--*-factor` options
+    incomplete = (args.precision_width is None) != (args.precision_height is None)
+    multiple = args.precision_factor is not None and (
+        args.precision_width is not None or args.precision_height is not None
+    )
+    if incomplete or multiple:
+        parser.error(
+            "Provide either --precision-factor or "
+            "both --precision-width and --precision-height"
+        )
+    incomplete = (args.padded_width is None) != (args.padded_height is None)
+    multiple = args.padded_factor is not None and (
+        args.padded_width is not None or args.padded_height is not None
+    )
+    if incomplete or multiple:
+        parser.error(
+            "Provide either --padded-factor or "
+            "both --padded-width and --padded-height"
+        )
+
+    # Return the parsed and known arguments
+    return args
 
 
 def interpret_config(defaults, args):
     # build the actual config object
-    config = defaults
-    if args.config_file != None:
-        custom = load_config(args.config_file)
-        validate_config(custom, "CLI Specified Configuration File")
-        config.update(custom)
-        validate_config(config, "After Merging With Defaults")
+    if args.config != None:
+        # load the custom config file if there is one
+        config = load_config(args.config)
+        validate_config(config, f"Loaded custom config file: {args.config}")
+    else:
+        # otherwise just use the defaults
+        config = defaults
+
+    # remove the `--*-factor` if `--*-width` or `--*-height` are set
+    if args.precision_width is not None or args.precision_height is not None:
+        config["precision-factor"] = None
+    if args.padded_width is not None or args.padded_height is not None:
+        config["padded-factor"] = None
+
+    # remove the `--*-width` and `--*-height` if the `--*-factor` is set
+    if args.precision_factor is not None:
+        config["precision-width"] = config["precision-height"] = None
+    if args.padded_factor is not None:
+        config["padded-width"] = config["padded-height"] = None
 
     # apply the command line parameter overrides to the config if there are any
     for prop, value in vars(args).items():
         prop = prop.replace("_", "-")
-        if prop == "gui" or prop == "config-file" or value is None:
+        if prop == "gui" or prop == "config" or value is None:
             continue
         else:
             config[prop] = value

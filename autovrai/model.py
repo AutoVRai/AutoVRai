@@ -2,10 +2,6 @@ import gc
 import torch
 import warnings
 
-from ZoeDepth.zoedepth.models.builder import build_model, DepthModel
-from ZoeDepth.zoedepth.utils.config import get_config
-from ZoeDepth.zoedepth.utils.misc import colorize, save_raw_16bit
-
 import autovrai
 
 
@@ -13,11 +9,6 @@ import autovrai
 warnings.filterwarnings(
     "ignore", category=UserWarning, module="torch.functional", lineno=504
 )
-
-# defining these so they can be imported by __init__
-ZoeDepth_DepthModel = DepthModel
-ZoeDepth_colorize = colorize
-ZoeDepth_save_raw_16bit = save_raw_16bit
 
 # treating the model as a singleton, so we can unload it when we need to
 MODEL = None
@@ -31,12 +22,29 @@ HEIGHT = None
 
 
 def model_loader(config, base_width: int, base_height: int, factor: float):
-    model_name = config["model-name"].lower()
     device_name = config["device-name"].lower()
+    device_name = "cuda" if device_name == "gpu" else device_name
 
-    # these are the calculated dimensions for the model to use
+    # handle variations of the model name, but make it uniform and ready for torch hub
+    model_name = config["model-name"].lower()
+    if model_name in ["zoedepth_nk", "zoed_m12_nk", "zoed_nk"]:
+        model_name = "ZoeD_NK"
+    elif model_name in ["zoedepth_n", "zoed_m12_n", "zoed_n"]:
+        model_name = "ZoeD_N"
+    elif model_name in ["zoedepth_k", "zoed_m12_k", "zoed_k"]:
+        model_name = "ZoeD_K"
+    else:
+        raise ValueError("Invalid model name")
+
+    # used to tell the model what "precision" to operate at, in a prior version the
+    # approach was to set the model resizer's width and height before processing each
+    # image, but found that there were memory leaks related to that approach. now the
+    # model is built once, and the resizer is set once, so the model needs to be
+    # unloaded and reloaded if the precision to process at changes. note, the height
+    # and width look swapped here because of how the model uses this internally
     width = int(round(base_width * factor))
     height = int(round(base_height * factor))
+    img_size = [height, width]
 
     # if the model is already loaded, and the details are the same, just return it
     global MODEL, NAME, DEVICE, WIDTH, HEIGHT
@@ -47,42 +55,36 @@ def model_loader(config, base_width: int, base_height: int, factor: float):
             and WIDTH == width
             and HEIGHT == height
         ):
-            cleanup()
             return MODEL
         else:
             MODEL = model_unloader(MODEL)
 
-    # make sure we load the right model and settings
-    if model_name == "zoedepth_nk":
-        conf = get_config("zoedepth_nk", "infer")
-    elif model_name == "zoedepth_n":
-        conf = get_config("zoedepth", "infer")
-    elif model_name == "zoedepth_k":
-        conf = get_config("zoedepth", "infer", config_version="kitti")
-    else:
-        raise ValueError("Invalid model name")
-
-    # this tells the model what "precision" to operate at, in a prior version the
-    # approach was to set the model resizer's width and height before processing each
-    # image, but found that there were memory leaks related to that approach. now the
-    # model is built once, and the resizer is set once, so the model needs to be
-    # unloaded and reloaded if the precision to process at changes. note, the height
-    # and width look swapped here because of how the model uses this internally
-    conf.img_size = [height, width]
-
     print(
         "--- AutoVR.ai ---",
-        f"Loading (model-name: {model_name}) "
-        f"onto (device-name: {device_name}) "
-        f"using the precision "
-        f"of (width: {width}) "
-        f"and (height: {height})",
+        f"Loading (model-name: {model_name}) onto (device-name: {device_name})",
+    )
+    print(
+        "--- AutoVR.ai ---",
+        f"Using the precision of (width: {width}) and (height: {height})",
+    )
+    print(
+        "--- AutoVR.ai ---",
+        f"Based on "
+        f"(base-width: {base_width}) "
+        f"and (base-height: {base_height}) "
+        f"and (factor: {factor})",
     )
 
     # we will print out our own model information instead
     with autovrai.suppress_output():
-        MODEL = build_model(conf)
-        MODEL.to(device_name).eval()
+        MODEL = torch.hub.load(
+            "isl-org/ZoeDepth",
+            model_name,
+            pretrained=True,
+            img_size=img_size,
+        )
+        MODEL.to(device_name)
+        MODEL.eval()
 
     NAME = model_name
     DEVICE = device_name
@@ -93,7 +95,7 @@ def model_loader(config, base_width: int, base_height: int, factor: float):
     return MODEL
 
 
-def model_unloader(model: ZoeDepth_DepthModel):
+def model_unloader(model):
     global MODEL, NAME, DEVICE, WIDTH, HEIGHT
 
     del model
@@ -121,7 +123,7 @@ def cleanup():
             device_name = "cpu"
 
     gc.collect()
-    if cuda_available:
+    if cuda_available and device_name != "cpu":
         with torch.cuda.device(DEVICE):
             torch.cuda.empty_cache()
             torch.cuda.ipc_collect()

@@ -3,6 +3,7 @@ from tqdm import trange
 from PIL import Image
 from collections import namedtuple
 
+
 import autovrai
 
 
@@ -42,8 +43,11 @@ def process_image_directory(config):
     precision = determine_precision_info(config)
     print("--- AutoVR.ai ---", "Using precision:", precision)
 
-    # Add this line before the loop processing
-    factors = {}
+    factors = config.get("factors", {})
+    print("--- AutoVR.ai ---", "Using factors:", factors)
+
+    # this is the model that will be used to process the images, but it needs
+    # reloaded if the precision changes or if we hit an out of memory error
     model = None
 
     for i in trange(file_count):
@@ -66,49 +70,56 @@ def process_image_directory(config):
         else:
             raise ValueError("Invalid precision type (factor or pixels)")
 
+        # track if the current run worked functions as the key to the factors
+        # dictionary to track what factors worked
+        success = False
+        dimensions = str((width, height))
+
+        # check if we have a known factor to use for this width and height combination
+        if dimensions in factors:
+            factor = factors[dimensions]
+
         # generate the actual depth info either with a manual precision mode that will
         # fail if we run out of VRAM, or dynamically where the precision used will be
         # reduced automatically if an error is encountered
         if precision.mode == "manual":
             model = autovrai.model_loader(config, width, height, factor)
             depth = model.infer_pil(image, output_type="numpy")
+            success = True
         elif precision.mode == "dynamic":
-            success = False
-
-            # check if we've already attempted this width and height combination
-            dimensions = (width, height)
-            if dimensions in factors:
-                factor = factors[dimensions]
-
             # attempt to generate a depth map, but reduce the factor and retry if needed
             while not success and factor > 0:
                 try:
                     model = autovrai.model_loader(config, width, height, factor)
                     depth = model.infer_pil(image, output_type="numpy")
                     success = True
-                except Exception as e:
-                    print(
-                        "--- AutoVR.ai ---",
-                        f"Error encountered while using "
-                        f"(width: {width}), "
-                        f"(height: {height}), "
-                        f"and (factor: {factor}). "
-                        "Retrying with a lower factor...",
-                    )
-                    del depth
-                    depth = None
-                    model = autovrai.model_unloader(model)
-                    factor = round(factor - 0.1, 1)
-
-            # once the depth information has been generated, save the final factor used
-            if success:
-                factors[dimensions] = factor
-            else:
-                raise RuntimeError(
-                    "Failed to generate depth map even after reducing factor to zero."
-                )
+                except RuntimeError as e:
+                    if "out of memory" in str(e) or "can't allocate memory" in str(e):
+                        print(
+                            "--- AutoVR.ai ---",
+                            f"Error encountered while using "
+                            f"(width: {width}), "
+                            f"(height: {height}), "
+                            f"and (factor: {factor}). "
+                            "Retrying with a lower factor...",
+                        )
+                        print("Error Message: ", e)
+                        del depth
+                        depth = None
+                        model = autovrai.model_unloader(model)
+                        factor = round(factor - 0.1, 1)
+                    else:
+                        raise e
         else:
             raise ValueError("Invalid precision mode (dynamic or manual)")
+
+        # once the depth information has been generated, save the final factor used
+        if success:
+            factors[dimensions] = factor
+        else:
+            raise RuntimeError(
+                "Failed to generate depth map even after reducing factor to zero."
+            )
 
         # generate the stereo images for the left and right eyes
         left, right = autovrai.stereo_eyes(image, depth, config["stereo-intensity"])
@@ -122,6 +133,7 @@ def process_image_directory(config):
         f"The final precision factor settings used: {factors}",
     )
 
+    # we are done with the model, go ahead and unload it to free up memory
     model = autovrai.model_unloader(model)
 
 
@@ -157,13 +169,11 @@ def save_image_outputs(config, image, depth, left, right, filepath):
         anaglyph.save(os.path.join(config["output-anaglyph"], filepath))
 
     if config["output-depthmap"] != "":
-        depthmap = Image.fromarray(autovrai.ZoeDepth_colorize(depth, cmap="gray_r"))
+        depthmap = Image.fromarray(autovrai.colorize_depthmap(depth))
         depthmap.save(os.path.join(config["output-depthmap"], filepath))
 
     if config["output-depthraw"] != "":
-        autovrai.ZoeDepth_save_raw_16bit(
-            depth, os.path.join(config["output-depthraw"], filepath)
-        )
+        autovrai.save_depthraw(depth, os.path.join(config["output-depthraw"], filepath))
 
 
 def determine_precision_info(config):
