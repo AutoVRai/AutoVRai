@@ -4,6 +4,7 @@ AI-powered toolkit for converting 2D media into immersive VR using local hardwar
 
 ---
 
+
 ## Installation
 
 This might be a bit rough for now, but I'll try to make it easier to install in the future. Development was done with python version `3.10.11`.
@@ -17,14 +18,6 @@ pip3 install --upgrade pip
 pip3 install -r requirements.txt
 ```
 
-### Requirements
-
-These should be handled by `requirements.txt` or `setup.py` but I'm not sure if I'm doing it right. In the meantime, you can try:
-
-```bash
-pip install -r requirements.txt
-```
-
 
 ## Simple Usage Examples
 
@@ -33,9 +26,9 @@ Launching the CLI using all default settings:
 python autovrai
 ```
 
-Launching the GUI starting with all default settings:
+Launching the GUI starting with all default settings and launch it in a browser window:
 ```bash
-python autovrai --gui
+python autovrai --gui --browser
 ```
 
 Showing the CLI and GUI help information:
@@ -52,6 +45,7 @@ Launching the CLI with a custom config file (needs created by you, see below):
 ```bash
 python autovrai --config 'configs/some-config.json'
 ```
+
 
 ## Configuration, Defaults, Parameters, and Options, Oh My!
 
