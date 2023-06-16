@@ -67,28 +67,8 @@ def handle_argparse(schema, defaults):
         prog=schema["title"], description=schema["description"]
     )
 
-    # Add the optional config file argument, this will replace the defaults
-    parser.add_argument(
-        "--config",
-        type=str,
-        help=(
-            "Optional. Path to the configuration file to use instead of the defaults, "
-            "other parameters will still override this configuration file."
-        ),
-        action=SingleUseAction,
-    )
-
-    # Add the optional gui mode argument, sends the application down a different path
-    parser.add_argument(
-        "--gui",
-        action="store_true",
-        help=(
-            "Optional. This launches the gradio app web server instead of just "
-            "processing. It will use all config info and overrides as the initial "
-            "state of the web app. You can create multiple shortcuts to launch the "
-            "web app to be pre-configured in different ways."
-        ),
-    )
+    # separation of adding additional special arguments that don't come from the schema
+    parser = add_special_arguments(parser)
 
     # Add arguments based on the schema properties
     for prop, details in schema["properties"].items():
@@ -198,23 +178,73 @@ def interpret_config(defaults, args):
 
     # remove the `--*-factor` if `--*-width` or `--*-height` are set
     if args.precision_width is not None or args.precision_height is not None:
-        config["precision-factor"] = None
+        del config["precision-factor"]
     if args.padded_width is not None or args.padded_height is not None:
-        config["padded-factor"] = None
+        del config["padded-factor"]
 
     # remove the `--*-width` and `--*-height` if the `--*-factor` is set
     if args.precision_factor is not None:
-        config["precision-width"] = config["precision-height"] = None
+        del config["precision-width"]
+        del config["precision-height"]
     if args.padded_factor is not None:
-        config["padded-width"] = config["padded-height"] = None
+        del config["padded-width"]
+        del config["padded-height"]
 
     # apply the command line parameter overrides to the config if there are any
     for prop, value in vars(args).items():
         prop = prop.replace("_", "-")
-        if prop == "gui" or prop == "config" or value is None:
+        if value is None or prop in ["config", "gui", "browser", "network"]:
             continue
         else:
             config[prop] = value
 
     # validate then return the final config object
     return validate_config(config, "After Applying CLI Overrides")
+
+
+def add_special_arguments(parser):
+    # Add the optional config file argument, this will replace the defaults
+    parser.add_argument(
+        "--config",
+        type=str,
+        help=(
+            "Optional. Path to the configuration file to use instead of the defaults. "
+            "Other parameters will still override this configuration file."
+        ),
+        action=SingleUseAction,
+    )
+
+    # Add the optional gui mode argument, sends the application down a different path
+    parser.add_argument(
+        "--gui",
+        action="store_true",
+        help=(
+            "Optional. This launches the gradio app web server instead of just "
+            "processing. It will use all config info and overrides as the initial "
+            "state of the web app. You can create multiple shortcuts to launch the "
+            "web app to be pre-configured in different ways."
+        ),
+    )
+
+    # Add the optional gui mode argument, sends the application down a different path
+    parser.add_argument(
+        "--browser",
+        action="store_true",
+        help=(
+            "Optional. Only used with --gui option. "
+            "This will launch the web app in your default browser when it is ready."
+        ),
+    )
+
+    # Add the optional gui mode argument, sends the application down a different path
+    parser.add_argument(
+        "--network",
+        action="store_true",
+        help=(
+            "Optional. Only used with --gui option. "
+            "This will make the web app accessible from your local network. "
+            "Otherwise, it will only be accessible from your local machine."
+        ),
+    )
+
+    return parser

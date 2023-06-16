@@ -37,7 +37,11 @@ if __name__ == "__main__":
 
     print(
         "--- AutoVR.ai ---",
-        "Configuration and CLI built successfully. Interpreting config...",
+        "Configuration and CLI built successfully.",
+    )
+    print(
+        "--- AutoVR.ai ---",
+        "Interpreting final config...",
     )
 
     # this gives us the fully interpreted config including the defaults, the user config
@@ -52,7 +56,7 @@ if __name__ == "__main__":
     # main entry point for the program, it'll either launch the GUI or start immediately
     if args.gui:
         print("--- AutoVR.ai ---", "Launching gradio GUI...")
-        autovrai.launch_gui(config, schema)
+        autovrai.launch_gui(config, schema, args.browser, args.network)
     else:
         input_type = config["input-type"]
         input_source = config["input-source"]

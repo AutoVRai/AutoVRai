@@ -1,5 +1,5 @@
 import os
-from tqdm import trange
+import tqdm
 from PIL import Image
 from collections import namedtuple
 
@@ -32,7 +32,7 @@ def process_single_image(config, image):
     pass
 
 
-def process_image_directory(config):
+def process_image_directory(config, progress=None):
     autovrai.prep_directories(config)
 
     filenames = autovrai.find_filenames(
@@ -41,7 +41,7 @@ def process_image_directory(config):
     file_count = filenames.__len__()
 
     precision = determine_precision_info(config)
-    print("--- AutoVR.ai ---", "Using precision:", precision)
+    print("--- AutoVR.ai ---", precision)
 
     factors = config.get("factors", {})
     print("--- AutoVR.ai ---", "Using factors:", factors)
@@ -50,7 +50,12 @@ def process_image_directory(config):
     # reloaded if the precision changes or if we hit an out of memory error
     model = None
 
-    for i in trange(file_count):
+    if progress != None:
+        current = 0.0
+        portion = 1.0 / file_count
+        progress(current, desc="Starting...")
+
+    for i in tqdm.trange(file_count):
         filename = filenames[i]
         filepath = os.path.basename(filename)
 
@@ -79,6 +84,9 @@ def process_image_directory(config):
         if dimensions in factors:
             factor = factors[dimensions]
 
+        if progress != None and model == None:
+            progress(0, desc="Loading model, just a moment...")
+
         # generate the actual depth info either with a manual precision mode that will
         # fail if we run out of VRAM, or dynamically where the precision used will be
         # reduced automatically if an error is encountered
@@ -103,7 +111,11 @@ def process_image_directory(config):
                             f"and (factor: {factor}). "
                             "Retrying with a lower factor...",
                         )
-                        print("Error Message: ", e)
+                        print(
+                            "--- AutoVR.ai ---",
+                            "Memory Error (in GB): ",
+                            autovrai.parse_memory_error(str(e)),
+                        )
                         del depth
                         depth = None
                         model = autovrai.model_unloader(model)
@@ -127,6 +139,10 @@ def process_image_directory(config):
         # save the outputs based on the output locations defined in the config
         save_image_outputs(config, image, depth, left, right, filepath)
 
+        if progress != None:
+            current += portion
+            progress(current, desc=f"Processed {filepath}")
+
     print(
         "--- AutoVR.ai ---",
         f"Processed {file_count} images. "
@@ -136,13 +152,15 @@ def process_image_directory(config):
     # we are done with the model, go ahead and unload it to free up memory
     model = autovrai.model_unloader(model)
 
+    return f"Done. Processed {file_count} images."
+
 
 def save_image_outputs(config, image, depth, left, right, filepath):
-    if config["output-stereo"] != "":
+    if config.get("output-stereo"):
         stereo = autovrai.combine_stereo(left, right)
         stereo.save(os.path.join(config["output-stereo"], filepath))
 
-    if config["output-padded"] != "":
+    if config.get("output-padded"):
         padding = determine_padding_info(config)
         if padding.type == "pixels":
             padded = autovrai.combine_padded(
@@ -164,15 +182,15 @@ def save_image_outputs(config, image, depth, left, right, filepath):
             raise ValueError("Invalid padded type (factor or pixels)")
         padded.save(os.path.join(config["output-padded"], filepath))
 
-    if config["output-anaglyph"] != "":
+    if config.get("output-anaglyph"):
         anaglyph = autovrai.combine_anaglyph(left, right)
         anaglyph.save(os.path.join(config["output-anaglyph"], filepath))
 
-    if config["output-depthmap"] != "":
+    if config.get("output-depthmap"):
         depthmap = Image.fromarray(autovrai.colorize_depthmap(depth))
         depthmap.save(os.path.join(config["output-depthmap"], filepath))
 
-    if config["output-depthraw"] != "":
+    if config.get("output-depthraw"):
         autovrai.save_depthraw(depth, os.path.join(config["output-depthraw"], filepath))
 
 

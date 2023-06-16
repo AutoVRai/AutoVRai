@@ -32,6 +32,7 @@
         "hstack",
         "imread",
         "imwrite",
+        "inbrowser",
         "Jorden",
         "jsonschema",
         "kitti",

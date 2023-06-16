@@ -1,4 +1,6 @@
 import os
+import re
+import ast
 import cv2
 import sys
 import glob
@@ -79,6 +81,10 @@ def find_filenames(location, patterns):
     # List to store image file names
     filenames = []
 
+    # Convert patterns to a list if it came in as a string
+    if isinstance(patterns, str):
+        patterns = ast.literal_eval(patterns)
+
     # Iterate over patterns and append matching files to the list
     for pattern in patterns:
         filenames.extend(glob.glob(os.path.join(location, pattern)))
@@ -117,11 +123,11 @@ def load_video(filename):
 def prep_directories(config):
     # Get the list of directories from the config
     directories = [
-        config["output-stereo"],
-        config["output-padded"],
-        config["output-anaglyph"],
-        config["output-depthmap"],
-        config["output-depthraw"],
+        config.get("output-stereo"),
+        config.get("output-padded"),
+        config.get("output-anaglyph"),
+        config.get("output-depthmap"),
+        config.get("output-depthraw"),
     ]
 
     for directory in directories:
@@ -148,3 +154,17 @@ def determine_file_or_path(file_or_path, context):
             f"Problem determining if {context} is file or directory. "
             f"({context}: {file_or_path})"
         )
+
+
+# interprets the values in the standard CUDA memory error message, outputs in GB
+def parse_memory_error(message):
+    info = {}
+    matches = re.findall(r"(\d+\.\d+)( GiB| MiB)", message)
+    units = {" GiB": 1.074, " MiB": 0.001074}  # Conversion factors to GB
+
+    keys = ["attempted", "total", "allocated", "free", "reserved"]
+    for i, match in enumerate(matches):
+        value, unit = match
+        info[keys[i]] = round(float(value) * units[unit], 2)
+
+    return info

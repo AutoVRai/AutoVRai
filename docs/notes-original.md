@@ -67,3 +67,6 @@ https://cupy.dev/
 
 ### Stable Diffusion Stuff
 https://rentry.org/sd-mashup
+
+### Three way simplified configuration triangle
+https://codepen.io/simeydotme/pen/bGQVypm
