@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="AutoVRai",
-    version="0.6",
+    version="0.7",
     description="AI-powered toolkit for converting 2D media into immersive VR using local hardware",
     author="Brian Jorden",
     license="MIT",
