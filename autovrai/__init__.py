@@ -16,6 +16,7 @@ from .utilities import (
     colorize_depthmap,
     save_depthraw,
     parse_memory_error,
+    get_local_ip,
 )
 from .process import (
     process_image_directory,
