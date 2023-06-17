@@ -186,12 +186,20 @@ def save_image_outputs(config, image, depth, left, right, filepath):
         anaglyph = autovrai.combine_anaglyph(left, right)
         anaglyph.save(os.path.join(config["output-anaglyph"], filepath))
 
+    # make a filename for the depthmap and depthraw outputs, be sure it is a png
+    png_file = filepath
+    name, ext = os.path.splitext(filepath)
+    if ext != ".png":
+        # we are just adding .png instead of replacing the extension, this is to prevent
+        # ending up with more than one input file trying to use the same output filename
+        png_file = filepath + ".png"
+
     if config.get("output-depthmap"):
         depthmap = Image.fromarray(autovrai.colorize_depthmap(depth))
-        depthmap.save(os.path.join(config["output-depthmap"], filepath))
+        depthmap.save(os.path.join(config["output-depthmap"], png_file))
 
     if config.get("output-depthraw"):
-        autovrai.save_depthraw(depth, os.path.join(config["output-depthraw"], filepath))
+        autovrai.save_depthraw(depth, os.path.join(config["output-depthraw"], png_file))
 
 
 def determine_precision_info(config):
