@@ -2,3 +2,5 @@
 *
 # Except this .gitignore file
 !.gitignore
+# And a placeholder file
+!favicon.ico
