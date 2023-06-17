@@ -225,10 +225,10 @@ def determine_precision_info(config):
 
 
 def determine_padding_info(config):
-    color = config["padded-color"]
-    width = config["padded-width"]
-    height = config["padded-height"]
-    factor = config["padded-factor"]
+    color = config.get("padded-color")
+    width = config.get("padded-width")
+    height = config.get("padded-height")
+    factor = config.get("padded-factor")
 
     # make sure we don't have conflicting padded settings
     if (factor != None and factor > 0) and (
