@@ -1,3 +1,4 @@
+import cv2
 import os
 import glob
 import json
@@ -6,12 +7,25 @@ import argparse
 from PIL import Image
 
 
-def generate_thumbnail(image_file, thumb_path):
+def generate_image_thumbnail(image_file, thumb_path):
     image = Image.open(image_file)
     # just use the left half of the image for the thumbnail (assuming it is stereo)
     image = image.crop((0, 0, image.width // 2, image.height))
     image.thumbnail((256, 256))
     image.save(thumb_path)
+
+
+def generate_video_thumbnail(video_file, thumb_path):
+    cap = cv2.VideoCapture(video_file)
+    cap.set(cv2.CAP_PROP_POS_FRAMES, cap.get(cv2.CAP_PROP_FRAME_COUNT) // 2)
+    ret, frame = cap.read()
+    # just use the left half of the image for the thumbnail (assuming it is stereo)
+    frame = frame[:, : frame.shape[1] // 2]
+    # turn the frame into a thumbnail version similar to PIL.Image.thumbnail
+    frame = cv2.resize(frame, (256, 256), interpolation=cv2.INTER_AREA)
+    if ret:
+        cv2.imwrite(thumb_path + ".png", frame)
+    cap.release()
 
 
 def get_local_ip():
@@ -35,7 +49,7 @@ def build_config(url, path, crawl, thumbs, patterns):
         url = f"http://{get_local_ip()}:8000/"
 
     if not patterns:
-        patterns = ["*.jpg", "*.jpeg", "*.png"]
+        patterns = ["*.jpg", "*.jpeg", "*.png", "*.mp4"]
 
     thumbs = thumbs if thumbs else "thumbs/"
     thumbs_path = os.path.join(path, thumbs)
@@ -46,17 +60,25 @@ def build_config(url, path, crawl, thumbs, patterns):
 
     if crawl:
         for root, dirs, files in os.walk(path):
-            scene = {"name": f"Images ({root})", "list": []}
-            scenes["scenes"].append(scene)
+            video_scene = {"name": f"Videos ({root})", "list": []}
+            image_scene = {"name": f"Images ({root})", "list": []}
+            scenes["scenes"].extend([image_scene, video_scene])
             for pattern in patterns:
                 for filename in glob.glob(os.path.join(root, pattern)):
-                    add_image(scene, url, root, filename, thumbs)
+                    if pattern == "*.mp4":
+                        add_video(video_scene, url, root, filename, thumbs)
+                    else:
+                        add_image(image_scene, url, root, filename, thumbs)
     else:
-        scene = {"name": "Images", "list": []}
-        scenes["scenes"].append(scene)
+        video_scene = {"name": "Videos", "list": []}
+        image_scene = {"name": "Images", "list": []}
+        scenes["scenes"].extend([image_scene, video_scene])
         for pattern in patterns:
             for filename in glob.glob(os.path.join(path, pattern)):
-                add_image(scene, url, path, filename, thumbs)
+                if pattern == "*.mp4":
+                    add_video(video_scene, url, path, filename, thumbs)
+                else:
+                    add_image(image_scene, url, path, filename, thumbs)
 
     with open(os.path.join(path, "deovr"), "w") as f:
         json.dump(scenes, f)
@@ -77,7 +99,7 @@ def add_image(scene, url, base_path, image_file, thumbs):
     thumb_file = os.path.join(thumbs, os.path.basename(image_file))
     thumb_path = os.path.join(base_path, thumb_file)
     if not os.path.exists(thumb_path):
-        generate_thumbnail(image_file, thumb_path)
+        generate_image_thumbnail(image_file, thumb_path)
     image_id = int(os.path.getmtime(image_file))  # unix timestamp
     image = {
         "path": f"{url}{relative_path}",
@@ -89,6 +111,27 @@ def add_image(scene, url, base_path, image_file, thumbs):
         "id": image_id,
     }
     scene["list"].append(image)
+
+
+def add_video(scene, url, base_path, video_file, thumbs):
+    relative_path = os.path.relpath(video_file, base_path)
+    thumb_file = os.path.join(thumbs, os.path.basename(video_file)) + ".png"
+    thumb_path = os.path.join(base_path, thumb_file)
+    if not os.path.exists(thumb_path):
+        generate_video_thumbnail(video_file, thumb_path)
+    video_id = int(os.path.getmtime(video_file))  # unix timestamp
+    video = {
+        "encodings": [
+            {"name": "h264", "videoSources": [{"url": f"{url}{relative_path}"}]}
+        ],
+        "thumbnailUrl": f"{url}{thumb_file}",
+        "title": os.path.basename(video_file),
+        "screenType": "flat",
+        "stereoMode": "sbs",
+        "is3d": True,
+        "id": video_id,
+    }
+    scene["list"].append(video)
 
 
 if __name__ == "__main__":
