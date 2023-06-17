@@ -61,6 +61,16 @@ def build_config(url, path, crawl, thumbs, patterns):
     with open(os.path.join(path, "deovr"), "w") as f:
         json.dump(scenes, f)
 
+    print("--- AutoVR.ai ---", f"DeoVR config file written to {path}/deovr.")
+    print(
+        "--- AutoVR.ai ---",
+        f"To start a local web server:  python -m http.server --directory {path}",
+    )
+    print(
+        "--- AutoVR.ai ---",
+        f"Once that is started, you can open this URL in the DeoVR browser:  {url}",
+    )
+
 
 def add_image(scene, url, base_path, image_file, thumbs):
     relative_path = os.path.relpath(image_file, base_path)
