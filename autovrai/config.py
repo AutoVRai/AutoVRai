@@ -178,17 +178,17 @@ def interpret_config(defaults, args):
 
     # remove the `--*-factor` if `--*-width` or `--*-height` are set
     if args.precision_width is not None or args.precision_height is not None:
-        del config["precision-factor"]
+        config.pop("precision-factor", None)
     if args.padded_width is not None or args.padded_height is not None:
-        del config["padded-factor"]
+        config.pop("padded-factor", None)
 
     # remove the `--*-width` and `--*-height` if the `--*-factor` is set
     if args.precision_factor is not None:
-        del config["precision-width"]
-        del config["precision-height"]
+        config.pop("precision-width", None)
+        config.pop("precision-height", None)
     if args.padded_factor is not None:
-        del config["padded-width"]
-        del config["padded-height"]
+        config.pop("padded-width", None)
+        config.pop("padded-height", None)
 
     # apply the command line parameter overrides to the config if there are any
     for prop, value in vars(args).items():
