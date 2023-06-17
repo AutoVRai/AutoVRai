@@ -177,8 +177,8 @@ def gui_layout():
                 input_type = component("input-type", interactive=False)
                 input_patterns = component("input-patterns", interactive=False)
             with gr.Column():
-                input_depthmap = component("input-depthmap")
-                component("input-depthraw")
+                input_depthmap = component("input-depthmap", interactive=False)
+                input_depthraw = component("input-depthraw", interactive=False)
 
     with gr.Accordion("Outputs", open=False) as outputs:
         with gr.Row(variant="panel"):
