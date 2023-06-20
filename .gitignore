@@ -1,7 +1,35 @@
-# AutoVR.ai
+########################################################################################
+###################################### AutoVR.ai #######################################
+
 deovr
 website
 
+# just in case someone leaves some input or output files somewhere they shouldn't have
+*.png
+*.jpg
+*.jpeg
+*.avi
+*.mpg
+*.mp4
+*.webm
+*.mov
+*.mkv
+*.m4v
+*.flv
+*.wmv
+
+input*/*
+output*/*
+!input/.gitkeep
+!output/.gitkeep
+!output/favicon.ico
+
+###################################### AutoVR.ai #######################################
+########################################################################################
+
+
+########################################################################################
+############ https://github.com/github/gitignore/blob/main/Python.gitignore ############
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -163,3 +191,6 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file.  For a more nuclear
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
+
+############ https://github.com/github/gitignore/blob/main/Python.gitignore ############
+########################################################################################
