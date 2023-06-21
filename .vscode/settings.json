@@ -14,6 +14,7 @@
     },
     "cSpell.words": [
         "asarray",
+        "astype",
         "autovrai",
         "cmap",
         "cuda",
@@ -42,6 +43,7 @@
         "matplotlib",
         "moviepy",
         "ndarray",
+        "ndimage",
         "njit",
         "numba",
         "opencv",
