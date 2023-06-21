@@ -1,77 +1,61 @@
-import cv2
 import os
+import cv2
 import argparse
-import math
+import datetime
+from tqdm import trange
 
 
-def extract_images_from_video(video_file, start_time, end_time, batch_size):
-    # Open the video file
-    video = cv2.VideoCapture(video_file)
+def video_shredder(filename, output):
+    video = cv2.VideoCapture(filename)
 
     if not video.isOpened():
-        print(f"Error: Could not open the video file {video_file}")
+        print(f"Error: Could not open the video file {filename}")
         return
 
-    # Calculate the total number of frames in the video
-    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-    fps = int(video.get(cv2.CAP_PROP_FPS))
-    
-    if start_time is None:
-        start_time = 0
-    if end_time is None:
-        end_time = math.ceil(total_frames / fps)
+    # if we don't have an output folder, we will use the name of the video file
+    if output is None:
+        output = os.path.splitext(filename)[0]
 
-    start_frame = int(start_time * fps)
-    end_frame = int(math.ceil(end_time * fps))
-    num_frames = end_frame - start_frame
+    if not os.path.exists(output):
+        os.makedirs(output)
 
-    num_batches = math.ceil(num_frames / batch_size)
-    output_base = os.path.splitext(video_file)[0]
+    # make sure we have an output folder one way or another by now
+    if not os.path.exists(output):
+        raise Exception(f"Error: Could not find or create the output folder {output}")
 
-    print(f"Total frames: {total_frames}")
-    print(f"Extracting from frame {start_frame} to frame {end_frame}")
-    print(f"Number of frames to be extracted: {num_frames}")
-    print(f"Number of batches: {num_batches}")
+    # get some basic video metadata for later
+    count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    digits = len(str(count))
 
-    video.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
+    for i in trange(count):
+        ret, frame = video.read()
 
-    os.makedirs(output_base, exist_ok=True)
-    for batch in range(num_batches):
-        output_folder = f"{output_base}/{batch+1:0{len(str(num_batches))}d}"
-        os.makedirs(output_folder, exist_ok=True)
+        if not ret:
+            break
 
-        for i in range(batch_size):
-            frame_number = start_frame + batch * batch_size + i
-            if frame_number >= end_frame:
-                break
+        filepath = os.path.join(output, f"frame_{i:0{digits}d}.png")
 
-            # Read a frame from the video
-            ret, frame = video.read()
+        cv2.imwrite(filepath, frame)
 
-            # Break the loop if we reached the end of the video
-            if not ret:
-                break
-
-            # Save the frame as an image
-            output_image_file = os.path.join(output_folder, f"frame_{frame_number:04d}.png")
-            cv2.imwrite(output_image_file, frame)
-        
-        print(f"Batch {batch+1}/{num_batches} ({(batch+1)/num_batches*100:.2f}% complete)")
-
-    # Release the video file
-    video.release()
+    print(f"Extracted {count} frames to {output} from {filename} successfully.")
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract images from a video file.")
-    parser.add_argument("video_file", help="The path to the input video file.")
-    parser.add_argument("--start_time", type=float, help="Start time (in seconds) to extract frames from (default: start of the video).")
-    parser.add_argument("--end_time", type=float, help="End time (in seconds) to extract frames until (default: end of the video).")
-    parser.add_argument("--batch_size", type=int, default=100, help="Number of frames per output folder (default: 100).")
+    print("Current Timestamp:", datetime.datetime.now())
 
+    parser = argparse.ArgumentParser(description="Extract images from a video file.")
+    parser.add_argument("filename", help="The video file to be processed")
+    parser.add_argument(
+        "--output",
+        help=(
+            "The output folder for the images, it will make a folder named "
+            "after the video file if a location is not provided."
+        ),
+    )
     args = parser.parse_args()
 
-    extract_images_from_video(args.video_file, args.start_time, args.end_time, args.batch_size)
+    video_shredder(args.filename, args.output)
+    print("Current Timestamp:", datetime.datetime.now())
 
 
 if __name__ == "__main__":
