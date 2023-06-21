@@ -25,3 +25,4 @@ from .process import (
     process_single_image,
     process_single_video,
 )
+from .tiles import handle_tiles

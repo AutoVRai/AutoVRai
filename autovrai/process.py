@@ -92,14 +92,18 @@ def process_image_directory(config, progress=None):
         # reduced automatically if an error is encountered
         if precision.mode == "manual":
             model = autovrai.model_loader(config, width, height, factor)
+            autovrai.print_current_datetime("After model loaded")
             depth = model.infer_pil(image, output_type="numpy")
+            autovrai.print_current_datetime("After depth generated")
             success = True
         elif precision.mode == "dynamic":
             # attempt to generate a depth map, but reduce the factor and retry if needed
             while not success and factor > 0:
                 try:
                     model = autovrai.model_loader(config, width, height, factor)
+                    autovrai.print_current_datetime("After model loaded")
                     depth = model.infer_pil(image, output_type="numpy")
+                    autovrai.print_current_datetime("After depth generated")
                     success = True
                 except RuntimeError as e:
                     if "out of memory" in str(e) or "can't allocate memory" in str(e):
@@ -133,8 +137,17 @@ def process_image_directory(config, progress=None):
                 "Failed to generate depth map even after reducing factor to zero."
             )
 
+        if config["tiled-upscale"]:
+            depth = autovrai.handle_tiles(model, image, depth)
+
         # generate the stereo images for the left and right eyes
         left, right = autovrai.stereo_eyes(image, depth, config["stereo-intensity"])
+
+        # swap the left and right images if we're using "combine" --- !!!TEMPORARY!!!
+        if config["tiled-upscale"]:
+            temp = left
+            left = right
+            right = temp
 
         # save the outputs based on the output locations defined in the config
         save_image_outputs(config, image, depth, left, right, filepath)
