@@ -24,7 +24,7 @@ def generate_video_thumbnail(video_file, thumb_path):
     # turn the frame into a thumbnail version similar to PIL.Image.thumbnail
     frame = cv2.resize(frame, (256, 256), interpolation=cv2.INTER_AREA)
     if ret:
-        cv2.imwrite(thumb_path + ".png", frame)
+        cv2.imwrite(thumb_path, frame)
     cap.release()
 
 
