@@ -24,6 +24,8 @@ import autovrai
 
 
 if __name__ == "__main__":
+    autovrai.print_current_datetime()
+
     print(
         "--- AutoVR.ai ---", "Ok, let's go. Loading configuration and building CLI..."
     )
@@ -89,6 +91,7 @@ if __name__ == "__main__":
             )
 
     print("--- AutoVR.ai ---", "We're all done. Hope it worked!")
+    autovrai.print_current_datetime()
 
 
 # this is by far the most useful, interesting, and largest open source project i've ever
