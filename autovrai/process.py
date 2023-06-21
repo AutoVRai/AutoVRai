@@ -92,18 +92,14 @@ def process_image_directory(config, progress=None):
         # reduced automatically if an error is encountered
         if precision.mode == "manual":
             model = autovrai.model_loader(config, width, height, factor)
-            autovrai.print_current_datetime("After model loaded")
             depth = model.infer_pil(image, output_type="numpy")
-            autovrai.print_current_datetime("After depth generated")
             success = True
         elif precision.mode == "dynamic":
             # attempt to generate a depth map, but reduce the factor and retry if needed
             while not success and factor > 0:
                 try:
                     model = autovrai.model_loader(config, width, height, factor)
-                    autovrai.print_current_datetime("After model loaded")
                     depth = model.infer_pil(image, output_type="numpy")
-                    autovrai.print_current_datetime("After depth generated")
                     success = True
                 except RuntimeError as e:
                     if "out of memory" in str(e) or "can't allocate memory" in str(e):
