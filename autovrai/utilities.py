@@ -7,6 +7,7 @@ import glob
 import torch
 import socket
 import logging
+import datetime
 import warnings
 from PIL import Image
 from contextlib import contextmanager
@@ -182,3 +183,9 @@ def get_local_ip():
     finally:
         s.close()
     return IP
+
+
+def print_current_datetime(info=""):
+    if info != "":
+        info = "- " + info
+    print("--- AutoVR.ai ---", "Current Timestamp:", datetime.datetime.now(), info)
