@@ -92,6 +92,7 @@ def model_loader(config, base_width: int, base_height: int, factor: float):
     HEIGHT = height
 
     cleanup()
+    autovrai.print_current_datetime("After model loaded")
     return MODEL
 
 
