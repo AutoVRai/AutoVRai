@@ -113,6 +113,10 @@
             "type": "number",
             "minimum": 0.0,
             "maximum": 10.0
+        },
+        "tiled-upscale": {
+            "description": "Experimental and optional. Not suggested for general usage yet. If this option is provided, it will use a tiled upscale when calculating the depth information. Very large performance hit.",
+            "type": "boolean"
         }
     },
     "required": ["input-type"],
