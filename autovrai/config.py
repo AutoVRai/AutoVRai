@@ -75,36 +75,39 @@ def handle_argparse(schema, defaults):
         if prop == "$schema":
             continue
 
-        # our basic types, haven't needed boolean yet...
+        prop_type = details["type"]
+
+        # our basic types, boolean is special cased below
         type_translation = {
             "string": str,
             "integer": int,
             "number": float,
+            "boolean": bool,
         }
         arg_type = None
         nargs = None
 
         # for an array, set nargs and use the array item type as a basic type lookup
-        if details["type"] == "array":
-            arg_type = type_translation[details["items"]["type"]]
+        if prop_type == "array":
+            arg_type = type_translation.get(details["items"]["type"])
             nargs = "+"
 
         # we need to pick one for compound types, these might need manually expanded
-        if details["type"] == ["string", "integer", "number"]:
+        if prop_type == ["string", "integer", "number"]:
             arg_type = str
-        if details["type"] == ["number", "integer"]:
+        if prop_type == ["number", "integer"]:
             arg_type = float
-        if details["type"] == ["integer", "number"]:
+        if prop_type == ["integer", "number"]:
             arg_type = float
 
         # translate the basic types to the python types we need, this isn't everything
         if arg_type is None:
-            arg_type = type_translation[details["type"]]
+            arg_type = type_translation.get(prop_type)
 
         # make sure we aren't skipping or missing anything accidentally
         if arg_type is None:
             raise ValueError(
-                f"Unsupported type defined in the config schema file: {details['type']}"
+                f"Unsupported type defined in the config schema file: {prop_type}"
             )
         if details["description"] is None:
             raise ValueError(
@@ -113,19 +116,26 @@ def handle_argparse(schema, defaults):
 
         # generate the (default: ) info for the help descriptions, based on the defaults
         if defaults != None:
-            default_info = defaults.get(prop) if defaults.get(prop) else '""'
+            default_info = defaults.get(prop, "")
             default_info = f" (default: {default_info})"
         else:
             default_info = ""
 
         # bring it all together and add the argument to the parser
-        parser.add_argument(
-            f"--{prop}",
-            nargs=nargs,
-            type=arg_type,
-            help=f"{details['description']}{default_info}",
-            action=SingleUseAction,
-        )
+        if prop_type == "boolean":
+            parser.add_argument(
+                f"--{prop}",
+                help=f"{details['description']}{default_info}",
+                action="store_true",
+            )
+        else:
+            parser.add_argument(
+                f"--{prop}",
+                nargs=nargs,
+                type=arg_type,
+                help=f"{details['description']}{default_info}",
+                action=SingleUseAction,
+            )
 
     return special_error_checking(parser)
 
